@@ -17,7 +17,7 @@ import {
 } from '@/hooks/useOrders';
 import { formatDateTime } from '@/lib/format';
 import { StatusBadge } from './StatusBadge';
-import { SalesNoteAlert } from './SalesNoteAlert';
+import { NotesPanel } from './NotesPanel';
 import { OrderpickList } from './OrderpickList';
 import { UnitsTable, computeRowValidations } from './UnitsTable';
 
@@ -118,7 +118,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
       </header>
 
       <div className="flex-1 space-y-6 px-8 py-6">
-        {order.salesNote && <SalesNoteAlert note={order.salesNote} />}
+        <NotesPanel notes={order.notes} />
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           <div>

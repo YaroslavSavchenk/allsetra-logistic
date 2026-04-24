@@ -11,7 +11,7 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-22T09:15:00',
     quoteOwner: 'Marieke Jansen',
-    salesNote: null,
+    notes: [],
     orderpick: [
       { product: 'RouteConnect HCV5-Lite', quantity: 4, note: '' },
       { product: 'ID Reader', quantity: 4, note: '' },
@@ -33,10 +33,17 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-22T14:42:00',
     quoteOwner: 'Pieter Bakker',
-    salesNote: null,
-    orderpick: [
-      { product: 'RouteConnect Eco5', quantity: 1, note: '' },
+    notes: [
+      {
+        id: 'n_snn_1',
+        author: 'Pieter Bakker',
+        content:
+          'Klant belt donderdag voor bevestiging verzenddatum — nummer staat in Zoho.',
+        createdAt: '2026-04-22T15:10:00',
+        modifiedAt: null,
+      },
     ],
+    orderpick: [{ product: 'RouteConnect Eco5', quantity: 1, note: '' }],
     units: [{ id: 'u1', imei: '', type: 'Eco5' }],
   },
   {
@@ -49,7 +56,7 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-23T08:05:00',
     quoteOwner: 'Sanne Visser',
-    salesNote: null,
+    notes: [],
     orderpick: [
       { product: 'RouteConnect Smart5', quantity: 2, note: '' },
       { product: 'RouteConnect HCV5-Lite', quantity: 3, note: '' },
@@ -74,10 +81,30 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-23T11:28:00',
     quoteOwner: 'Marieke Jansen',
-    salesNote:
-      'Klant wil custom APN instelling: "vermeer-fleet.mnc001.mcc204.gprs". Dit MOET vooraf op de devices gezet worden. Neem contact op met tech support als onduidelijk.',
+    notes: [
+      {
+        id: 'n_vrm_1',
+        author: 'Marieke Jansen',
+        content:
+          'Custom APN instelling vereist: "vermeer-fleet.mnc001.mcc204.gprs". Dit MOET vooraf op de devices gezet worden. Contact tech support bij twijfel.',
+        createdAt: '2026-04-23T11:30:00',
+        modifiedAt: null,
+      },
+      {
+        id: 'n_vrm_2',
+        author: 'Ruud (tech)',
+        content:
+          'APN via factory tool gezet op devices met serienummers SN-4401..4403. Dubbelcheck met log voor verzenden.',
+        createdAt: '2026-04-23T14:02:00',
+        modifiedAt: '2026-04-23T14:05:00',
+      },
+    ],
     orderpick: [
-      { product: 'RouteConnect Smart5', quantity: 3, note: 'Custom APN vereist' },
+      {
+        product: 'RouteConnect Smart5',
+        quantity: 3,
+        note: 'Custom APN vereist',
+      },
     ],
     units: [
       { id: 'u1', imei: '', type: 'Smart5' },
@@ -96,8 +123,16 @@ export const MOCK_ORDERS: Order[] = [
     status: 'In behandeling',
     createdAt: '2026-04-23T15:50:00',
     quoteOwner: 'Pieter Bakker',
-    salesNote:
-      'Verzenden naar installatiebedrijf, NIET naar klant. Factuur wel naar Taxi Maastricht.',
+    notes: [
+      {
+        id: 'n_tmc_1',
+        author: 'Pieter Bakker',
+        content:
+          'Verzenden naar installatiebedrijf Heuvelland, NIET naar klant. Factuur wel naar Taxi Maastricht Centraal.',
+        createdAt: '2026-04-23T15:55:00',
+        modifiedAt: null,
+      },
+    ],
     orderpick: [
       { product: 'RouteConnect Eco5', quantity: 3, note: '' },
       { product: 'ID Reader', quantity: 3, note: '' },

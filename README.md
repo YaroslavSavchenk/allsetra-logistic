@@ -192,41 +192,112 @@ Belangrijk:
   ingevulde orders.
 - `createdAt` als ISO string — oudste orders staan bovenaan in de sidebar.
 
-## Zoho integratie — voorbereid, nog niet geactiveerd
+## Zoho integratie
 
-De frontend praat met orders via één interface:
+De Rust-kant van Tauri praat direct met Zoho CRM — geen losse backend. De
+frontend roept Tauri commands aan via `@tauri-apps/api`; de `OrderService`
+façade in `src/services/index.ts` switcht automatisch tussen mock en live op
+basis van of de Rust binary met Zoho secrets gecompileerd is.
 
-```ts
-// src/services/orderService.ts
-interface OrderService {
-  getOpenOrders(): Promise<Order[]>;
-  getOrderById(id: string): Promise<Order | null>;
-  updateOrderUnits(id: string, units: Unit[]): Promise<Order>;
-  markAsShipped(id: string): Promise<Order>;
-}
+```
+src-tauri/src/zoho/
+├── config.rs     — env-baked constants, module/field name mappings
+├── error.rs       — ZohoError (Serializable naar JS via IPC)
+├── models.rs      — Order/Unit/OrderNote (camelCase JSON → TS types)
+├── client.rs      — HTTP + OAuth refresh flow + 1h token cache + retry op 401
+├── mapper.rs      — Zoho JSON → Order (defensief: onbekende velden = leeg)
+└── commands.rs    — 5 #[tauri::command]: is_configured, fetch_open_orders,
+                    fetch_order (met notes), update_units, ship_order
 ```
 
-De injectie in `src/services/index.ts` wijst nu naar `MockOrderService`. Twee
-routes om Zoho aan te sluiten:
+### Stap 1 — Zoho Self Client aanmaken
 
-**Route A — Rust zelf (aanbevolen voor deze desktop-context)**
+1. Login op https://api-console.zoho.eu als Zoho admin
+2. "Add Client" → "Self Client" → kopieer **Client ID** en **Client Secret**
+3. Tab "Generate Code":
+   - Scope: `ZohoCRM.modules.custom.READ,ZohoCRM.modules.custom.UPDATE,ZohoCRM.notes.ALL`
+   - Time duration: 10 minuten (je ruilt hem zo in)
+   - Scope Description: vrij invullen
+   - Genereer → krijg grant code
+4. Ruil direct in voor refresh + access token:
+   ```bash
+   curl -X POST https://accounts.zoho.eu/oauth/v2/token \
+     -d "grant_type=authorization_code" \
+     -d "client_id=..." \
+     -d "client_secret=..." \
+     -d "code=<grant code>" \
+     -d "redirect_uri=https://accounts.zoho.eu"
+   ```
+5. Bewaar de **refresh_token** uit de response — die is forever geldig.
 
-De Tauri Rust-kant praat rechtstreeks met Zoho. Client Secret + Refresh Token
-worden opgeslagen in de OS keyring via `tauri-plugin-stronghold` of in een
-lokaal encrypted bestand via `tauri-plugin-store`. Een `ZohoOrderService`
-wrapper in `src/services/` roept Rust commands aan via `@tauri-apps/api`.
+### Stap 2 — Secrets uploaden naar GitHub
 
-Voordeel: één deployable. Geen losse backend te runnen/updaten.
+```bash
+echo -n "<client_id>"     | gh secret set ZOHO_CLIENT_ID
+echo -n "<client_secret>" | gh secret set ZOHO_CLIENT_SECRET
+echo -n "<refresh_token>" | gh secret set ZOHO_REFRESH_TOKEN
 
-**Route B — Losse backend proxy**
+# Optioneel — de defaults gaan uit van EU sandbox + module "RouteConnectOrders_test"
+echo -n "https://www.zohoapis.eu"        | gh secret set ZOHO_API_BASE        # voor prod
+echo -n "<jouw_module_api_naam>"          | gh secret set ZOHO_MODULE
+```
 
-Node/FastAPI backend bewaart tokens server-side, Tauri frontend praat alleen
-met de backend. Zelfde patroon als klassieke webapps.
+### Stap 3 — Field-namen bevestigen
 
-Zoho-specifieke details (EU datacenter, module `RouteConnectOrders_test`,
-OAuth 2.0 Self Client flow, relevante endpoints, subformulier-valkuilen) staan
-in het oorspronkelijke project plan. Lees dat voordat je begint aan de
-integratie.
+De field API-namen in `src-tauri/src/zoho/config.rs` zijn **gokken uit het
+project plan**. Haal één bestaande order op om ze te verifiëren:
+
+```bash
+# krijg access token
+ACCESS_TOKEN=$(curl -s -X POST https://accounts.zoho.eu/oauth/v2/token \
+  -d "grant_type=refresh_token&client_id=...&client_secret=...&refresh_token=..." \
+  | jq -r .access_token)
+
+# haal één order op
+curl -s -H "Authorization: Zoho-oauthtoken $ACCESS_TOKEN" \
+  "https://sandbox.zohoapis.eu/crm/v8/RouteConnectOrders_test/<record_id>" | jq
+```
+
+Vergelijk de JSON keys met de `FIELD_*` constants in `config.rs`. Pas aan
+waar nodig.
+
+### Stap 4 — Tag en bouw
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+CI bakt de secrets als compile-time env vars de Rust binary in — ze zitten
+niet als string in het frontend bundle. Geïnstalleerde apps zien binnen
+~30 min de update via de auto-updater.
+
+### Runtime gedrag
+
+- **Lijst ophalen**: `zoho_fetch_open_orders` doet één search-call met
+  criterium `(Status:equals:Nieuw) OR (Status:equals:In behandeling)` — dus
+  zonder vooraf ingerichte Custom View nodig.
+- **Order detail**: `zoho_fetch_order` fetcht tegelijk de order EN z'n notes
+  (parallel `tokio::join!`); de app poll dit elke 30s zolang de order
+  geopend is zodat nieuwe/bijgewerkte notes live in beeld komen.
+- **Units updaten**: `zoho_update_units` stuurt de **volledige** Units array
+  in één PUT. Zoho's subformulier gedrag: ontbrekende rijen → verwijderd. We
+  sturen altijd alles.
+- **Versturen**: `zoho_ship_order` zet `Status = "Verstuurd"` en de order
+  valt uit de lijst bij de volgende `search()` call.
+- **Token**: 1u access token cached in Rust Mutex, refresht 60s voor expiry.
+  Bij 401 wordt cache gedumpt en de request één keer geretry'd.
+
+### Fallback
+
+Zolang `ZOHO_CLIENT_ID` / `_SECRET` / `_REFRESH_TOKEN` in de build niet
+gezet zijn:
+
+- `zoho_is_configured` → false
+- `src/services/index.ts` houdt `MockOrderService` aan
+- De app werkt op mock data zodat dev/preview-builds altijd bruikbaar zijn
+
+Zoho-specifieke details (EU datacenter, OAuth Self Client flow,
+subformulier-valkuilen) staan in het oorspronkelijke project plan.
 
 ## Auto-update — hoe het werkt
 

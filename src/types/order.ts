@@ -18,6 +18,19 @@ export interface Unit {
   type: DeviceType;
 }
 
+/**
+ * A note attached to the order in Zoho. Multiple per order, written by sales
+ * (or anyone with write access). The app displays them read-only and refreshes
+ * them on a short interval so edits in Zoho show up live.
+ */
+export interface OrderNote {
+  id: string;
+  content: string;
+  author: string;
+  createdAt: string;
+  modifiedAt: string | null;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -28,7 +41,7 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
   quoteOwner: string;
-  salesNote: string | null;
+  notes: OrderNote[];
   orderpick: OrderpickItem[];
   units: Unit[];
 }

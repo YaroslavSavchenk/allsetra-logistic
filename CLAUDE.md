@@ -133,13 +133,25 @@ commands (`#[tauri::command]`) so the frontend calls into Rust via
 
 ### Service wiring
 
-When Zoho lands:
-- `ZohoOrderService` on the TypeScript side just forwards to Tauri commands
-  (`invoke('fetch_open_orders')`, etc.) — no HTTP clients in the frontend
-- Rust owns: OAuth refresh flow, access-token cache (in-memory, 1-hour TTL),
-  retry/backoff, and talking to the Zoho REST API
-- `src/services/index.ts` swaps `MockOrderService` → `ZohoOrderService`;
-  components don't change
+Zoho integration lives in `src-tauri/src/zoho/` with:
+- `config.rs` — env-baked constants (secrets via `option_env!`) + field
+  name mappings
+- `client.rs` — HTTP + OAuth token cache + 401 retry
+- `mapper.rs` — Zoho JSON → our `Order` (defensive; missing fields = empty
+  string, never crashes the response)
+- `commands.rs` — 5 `#[tauri::command]`s: `zoho_is_configured`,
+  `zoho_fetch_open_orders`, `zoho_fetch_order` (joins notes in parallel),
+  `zoho_update_units`, `zoho_ship_order`
+
+The TS `ZohoOrderService` is a thin invoker. `src/services/index.ts` is a
+façade that probes `zoho_is_configured` once at load time and picks between
+mock and live — so dev (`npm run dev` in browser) and Tauri-without-secrets
+both work on mock, while CI builds with secrets baked in go live.
+
+**Notes are a Zoho-native entity, not a custom field.** `zoho_fetch_order`
+fetches `/{module}/{id}/Notes` in parallel with the order itself; the front
+end polls this every 30s while an order is open so edits/additions in Zoho
+show up without a manual refresh. The list view skips notes (N+1 avoidance).
 
 ### Zoho gotchas
 

@@ -44,6 +44,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Zoho secrets are baked into the Rust binary at compile time via
+          # env!() — when set here, the `zoho_is_configured` probe returns
+          # true and the frontend switches from MockOrderService to
+          # ZohoOrderService. When unset, the app still builds but falls back
+          # to mock data (useful for early builds / previews).
+          ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
+          ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
+          ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
+          # Optional overrides — leave unset to use built-in defaults
+          # (EU sandbox, module "RouteConnectOrders_test").
+          ZOHO_API_BASE: ${{ secrets.ZOHO_API_BASE }}
+          ZOHO_ACCOUNTS_URL: ${{ secrets.ZOHO_ACCOUNTS_URL }}
+          ZOHO_MODULE: ${{ secrets.ZOHO_MODULE }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'RouteConnect Logistiek ${{ github.ref_name }}'

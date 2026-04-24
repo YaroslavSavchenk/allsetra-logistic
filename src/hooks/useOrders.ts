@@ -12,11 +12,16 @@ export function useOpenOrders() {
   });
 }
 
+const DETAIL_REFETCH_INTERVAL_MS = 30_000;
+
 export function useOrder(id: string | null) {
   return useQuery({
     queryKey: id ? orderKey(id) : ['orders', 'byId', 'none'],
     queryFn: () => (id ? orderService.getOrderById(id) : null),
     enabled: id !== null,
+    // Keep notes + other server-side edits live while an order is open.
+    refetchInterval: DETAIL_REFETCH_INTERVAL_MS,
+    refetchOnWindowFocus: true,
   });
 }
 
