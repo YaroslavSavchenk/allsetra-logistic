@@ -1,0 +1,54 @@
+name: Build Windows installer
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: 'Publish as draft release'
+        type: boolean
+        default: true
+
+jobs:
+  build-windows:
+    name: Build and release (Windows)
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'RouteConnect Logistiek ${{ github.ref_name }}'
+          releaseBody: |
+            Windows installer voor RouteConnect Logistiek.
+
+            Download het `.msi` of `.exe` bestand hieronder en installeer.
+          releaseDraft: ${{ github.event.inputs.draft != 'false' }}
+          prerelease: false
+          args: --target x86_64-pc-windows-msvc
