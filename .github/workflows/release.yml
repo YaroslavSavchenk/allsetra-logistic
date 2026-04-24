@@ -1,4 +1,4 @@
-name: Build Windows installer
+name: Build signed Windows installer
 
 on:
   push:
@@ -38,10 +38,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build Tauri app
+      - name: Build and sign Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'RouteConnect Logistiek ${{ github.ref_name }}'
@@ -49,6 +51,10 @@ jobs:
             Windows installer voor RouteConnect Logistiek.
 
             Download het `.msi` of `.exe` bestand hieronder en installeer.
+            Auto-update zorgt daarna dat je altijd de laatste versie hebt —
+            geen herinstallatie meer nodig.
           releaseDraft: ${{ github.event.inputs.draft != 'false' }}
           prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
           args: --target x86_64-pc-windows-msvc

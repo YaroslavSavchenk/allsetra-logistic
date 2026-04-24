@@ -30,19 +30,43 @@ relevant is.
   straks de Zoho Client Secret & Refresh Token leven.
 - Opstarttijd en RAM-gebruik zijn significant lager.
 
-## Installer downloaden
+## Voor de eindgebruiker (logistiek medewerker)
 
-De app is bedoeld voor Windows-werkstations. Twee manieren om aan een
-installer te komen:
+Eén download en je bent klaar:
 
-**1. Via GitHub Releases (aanbevolen).**
-Push een tag (`git tag v0.1.0 && git push origin v0.1.0`) en de workflow in
-`.github/workflows/release.yml` bouwt op een `windows-latest` runner
-automatisch een `.msi` én `.exe` installer, en publiceert ze als draft
-release. Download daar, installeer, klaar.
+1. Ga naar de [Releases pagina](https://github.com/YaroslavSavchenk/allsetra-logistic/releases)
+2. Download de laatste `.msi` of `.exe`
+3. Dubbelklik, installeer, klaar — geen configuratie nodig
+4. Daarna **updatet de app zichzelf automatisch**: bij elke start wordt
+   gecheckt of er een nieuwere versie is; als dat zo is verschijnt
+   rechtsonder een notificatie met "Nu updaten" / "Later"
 
-**2. Lokaal builden op een Windows machine.**
-Zie "Zelf bouwen" hieronder.
+Eventuele secrets (Zoho API sleutels straks) zijn nooit zichtbaar — ze zitten
+óf gecompileerd in de Rust-binary (niet leesbaar als tekst), óf in de
+Windows Credential Manager, óf worden pas per installatie via een inlog
+aangemaakt. **Geen `.env` bestand op de werkstations.**
+
+## Een nieuwe versie uitbrengen (voor developers)
+
+```bash
+# 1. Bump versie in package.json en src-tauri/tauri.conf.json
+# 2. Commit en tag
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Dat triggert `.github/workflows/release.yml`:
+
+1. Windows-runner compileert het Rust + TS project
+2. Tekent de installers met de Ed25519 key uit GitHub Secrets
+   (`TAURI_SIGNING_PRIVATE_KEY`)
+3. Genereert `latest.json` update manifest
+4. Publiceert als draft GitHub Release met `.msi` + `.exe` + `latest.json`
+
+Zodra de release gepubliceerd is (promote de draft), zien ALLE geïnstalleerde
+apps binnen een paar minuten de update.
+
+Lokaal bouwen zonder CI kan ook — zie "Zelf bouwen" hieronder.
 
 ## Vereisten (alleen voor ontwikkelen)
 
@@ -204,6 +228,37 @@ OAuth 2.0 Self Client flow, relevante endpoints, subformulier-valkuilen) staan
 in het oorspronkelijke project plan. Lees dat voordat je begint aan de
 integratie.
 
+## Auto-update — hoe het werkt
+
+- Bij opstart doet de app een `check()` tegen de GitHub Releases update
+  manifest (`latest.json`).
+- Als `version > huidige versie`, verschijnt de `UpdatePrompt` card
+  rechtsonder. Gebruiker klikt "Nu updaten" of "Later".
+- Tauri downloadt het gesigneerde updater-artifact, **verifieert de signature
+  met de public key die in `tauri.conf.json` staat**, en installeert.
+- De gebruiker klikt "Herstarten" en is op de nieuwe versie.
+
+De public key zit vast in elke installer. Een aanvaller kan geen valse update
+injecteren — elke update moet met de overeenkomende private key (alleen in
+GitHub Secrets) gesigneerd zijn.
+
+### Signing keys
+
+- **Public key**: staat in `src-tauri/tauri.conf.json` onder
+  `plugins.updater.pubkey` — veilig te committen
+- **Private key**: GitHub Secret `TAURI_SIGNING_PRIVATE_KEY` — **nooit
+  committen**. Lokale backup in `~/.tauri-keys/routeconnect` (houd dit veilig,
+  bijv. in 1Password/Bitwarden — als je het kwijtraakt kunnen geïnstalleerde
+  apps geen updates meer accepteren en moet iedereen opnieuw installeren).
+- Genereren/roteren:
+  ```bash
+  npx tauri signer generate --write-keys ~/.tauri-keys/routeconnect --password ""
+  ```
+  Daarna: update `pubkey` in `tauri.conf.json`, en upload de private key:
+  ```bash
+  gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.tauri-keys/routeconnect
+  ```
+
 ## Bekende beperkingen
 
 - Mock service draait in-memory — een reload reset alle progressie. Opzettelijk
@@ -215,4 +270,6 @@ integratie.
 - IMEI input strippt non-digits automatisch; "alleen cijfers"-foutmelding is
   daardoor in de praktijk moeilijk te triggeren vanuit de UI.
 - `tauri:build` produceert alleen de installer voor het huidige platform —
-  voor Windows `.msi` bouw je op Windows.
+  voor Windows `.msi` bouw je op Windows of via de CI workflow.
+- Auto-update vereist internet bij opstart. Bij offline werkstation blijft de
+  app gewoon werken op de geïnstalleerde versie.

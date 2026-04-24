@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { OrderWorkspace } from '@/components/OrderWorkspace';
 import { EmptyState } from '@/components/EmptyState';
+import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { useOpenOrders } from '@/hooks/useOrders';
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
           <EmptyState />
         )}
       </main>
+      <UpdatePrompt />
     </div>
   );
 }

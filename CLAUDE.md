@@ -11,6 +11,8 @@ API — the architecture must be ready for that swap without a rewrite.
 ## Tech stack
 
 - **Desktop shell**: Tauri 2 (Rust + system WebView2 on Windows)
+- **Auto-updater**: `tauri-plugin-updater` — pulls signed updates from GitHub
+  Releases, verified against an Ed25519 pubkey baked in at build time
 - **Frontend**: React + Vite + TypeScript
 - **Styling**: Tailwind CSS
 - **Data fetching**: TanStack Query (React Query)
@@ -24,6 +26,27 @@ incidental — Windows is the target. Final builds run on Windows (locally or
 via the GitHub Actions workflow at `.github/workflows/release.yml`).
 
 Keep dependencies minimal. Tailwind + React + an icon library is enough.
+
+## Non-negotiable UX rules for the installed app
+
+This is for internal logistics users, not developers. They download the
+installer and must be productive in under 30 seconds.
+
+- **No first-run configuration.** No settings screen, no API key prompts, no
+  "paste your token" flows. The installer is shipped ready-to-run.
+- **No `.env` or config files on the workstation.** `.env` is a dev-only
+  concept; production config is either baked into the binary at build time,
+  stored in the OS keyring, or shipped inside `tauri.conf.json` (for public
+  values only).
+- **Secrets are never visible as text.** No .env, no JSON config with API
+  keys. Sensitive values either compile into the Rust binary (hard to
+  extract) or live in Windows Credential Manager (user-profile-encrypted).
+- **Auto-update is silent and opt-in-to-install.** Background check, small
+  card in the corner when an update exists, user clicks to install. Never
+  forced, never blocking.
+
+If a feature requires the user to know a URL, paste a token, or edit a file,
+redesign it before shipping.
 
 ## Language conventions
 
@@ -83,17 +106,24 @@ reach into the mock array directly** — always go through the service.
 
 ### Where secrets live
 
-**Never in `.env`.** A .env is baked into the frontend bundle (or readable
-inside the installer), so anything sensitive there leaks to whoever extracts
-the app. The rule:
+**Never in `.env` on a user's machine.** `.env` is a dev-only artifact. The
+installed app must not ship any `.env` or config file with sensitive values —
+they'd be readable inside the installer.
 
-| Data                     | Where                                       |
-|--------------------------|---------------------------------------------|
-| `ZOHO_CLIENT_ID`         | `.env` — semi-public identifier, OK          |
-| `ZOHO_API_BASE`, module  | `.env` — config, not secret                  |
-| `ZOHO_CLIENT_SECRET`     | **OS keyring** (Windows Credential Manager)  |
-| `ZOHO_REFRESH_TOKEN`     | **OS keyring**                               |
-| Access token             | In-memory only, never persisted              |
+| Data                     | Dev (in repo)                       | Production (installed app)              |
+|--------------------------|-------------------------------------|-----------------------------------------|
+| `ZOHO_CLIENT_ID`         | `.env` (template `.env.example`)    | Compiled into binary via `env!(...)`     |
+| `ZOHO_API_BASE`, module  | `.env`                              | Compiled into binary / `tauri.conf.json` |
+| `ZOHO_CLIENT_SECRET`     | GitHub Secret + local `.env`        | Compiled into binary via build-time env  |
+| `ZOHO_REFRESH_TOKEN`     | GitHub Secret (per-install, really) | **OS keyring** (Windows Credential Mgr)  |
+| Access token             | —                                   | In-memory only, never persisted          |
+
+**The pattern:** build-time secrets come from GitHub Secrets → env → Rust
+`env!(...)` macro → compiled into the `.exe`. Runtime-obtained tokens (what
+the user's OAuth flow returns on first auth) go to the OS keyring via the
+`keyring` crate. Reverse-engineering a Rust binary to extract a string isn't
+impossible but is orders of magnitude harder than reading a `.env` file, and
+acceptable for internal-tool distribution.
 
 Use the Rust side to read/write the keyring — candidates: the `keyring` crate
 (thin wrapper over Win/Mac/Linux secret stores) or `tauri-plugin-stronghold`

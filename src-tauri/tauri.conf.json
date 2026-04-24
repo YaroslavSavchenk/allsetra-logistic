@@ -39,6 +39,21 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": true,
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFERUEyMjE3NzE3QjFBQTQKUldTa0dudHhGeUxxclF6VFZsZU9RRkc2bEdHZTdYK1piaEc0d0JyVnE0K29DdkNSdmZ1RjBsZUEK",
+      "endpoints": [
+        "https://github.com/YaroslavSavchenk/allsetra-logistic/releases/latest/download/latest.json"
+      ]
+    }
   }
 }
