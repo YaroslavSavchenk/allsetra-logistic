@@ -1,0 +1,111 @@
+import type { Order } from '@/types/order';
+
+export const MOCK_ORDERS: Order[] = [
+  {
+    id: 'zcrm_001',
+    orderNumber: 'RCO-0042',
+    account: 'Transportbedrijf De Vries B.V.',
+    address: 'Industrieweg 142',
+    postcode: '3542 AD',
+    city: 'Utrecht',
+    status: 'Nieuw',
+    createdAt: '2026-04-22T09:15:00',
+    quoteOwner: 'Marieke Jansen',
+    salesNote: null,
+    orderpick: [
+      { product: 'RouteConnect HCV5-Lite', quantity: 4, note: '' },
+      { product: 'ID Reader', quantity: 4, note: '' },
+    ],
+    units: [
+      { id: 'u1', imei: '', type: 'HCV5-Lite' },
+      { id: 'u2', imei: '', type: 'HCV5-Lite' },
+      { id: 'u3', imei: '', type: 'HCV5-Lite' },
+      { id: 'u4', imei: '', type: 'HCV5-Lite' },
+    ],
+  },
+  {
+    id: 'zcrm_002',
+    orderNumber: 'RCO-0043',
+    account: 'Koeriersdienst Snelweg Noord',
+    address: 'Havenstraat 8',
+    postcode: '9723 BR',
+    city: 'Groningen',
+    status: 'Nieuw',
+    createdAt: '2026-04-22T14:42:00',
+    quoteOwner: 'Pieter Bakker',
+    salesNote: null,
+    orderpick: [
+      { product: 'RouteConnect Eco5', quantity: 1, note: '' },
+    ],
+    units: [{ id: 'u1', imei: '', type: 'Eco5' }],
+  },
+  {
+    id: 'zcrm_003',
+    orderNumber: 'RCO-0044',
+    account: 'Logistiek Centrum Eindhoven',
+    address: 'De Run 4220',
+    postcode: '5503 LN',
+    city: 'Veldhoven',
+    status: 'Nieuw',
+    createdAt: '2026-04-23T08:05:00',
+    quoteOwner: 'Sanne Visser',
+    salesNote: null,
+    orderpick: [
+      { product: 'RouteConnect Smart5', quantity: 2, note: '' },
+      { product: 'RouteConnect HCV5-Lite', quantity: 3, note: '' },
+      { product: 'ID Reader', quantity: 5, note: '' },
+      { product: 'Buzzer', quantity: 2, note: 'Luide variant' },
+    ],
+    units: [
+      { id: 'u1', imei: '', type: 'Smart5' },
+      { id: 'u2', imei: '', type: 'Smart5' },
+      { id: 'u3', imei: '', type: 'HCV5-Lite' },
+      { id: 'u4', imei: '', type: 'HCV5-Lite' },
+      { id: 'u5', imei: '', type: 'HCV5-Lite' },
+    ],
+  },
+  {
+    id: 'zcrm_004',
+    orderNumber: 'RCO-0045',
+    account: 'Bouwbedrijf Vermeer & Zonen',
+    address: 'Stationsweg 17',
+    postcode: '7607 GX',
+    city: 'Almelo',
+    status: 'Nieuw',
+    createdAt: '2026-04-23T11:28:00',
+    quoteOwner: 'Marieke Jansen',
+    salesNote:
+      'Klant wil custom APN instelling: "vermeer-fleet.mnc001.mcc204.gprs". Dit MOET vooraf op de devices gezet worden. Neem contact op met tech support als onduidelijk.',
+    orderpick: [
+      { product: 'RouteConnect Smart5', quantity: 3, note: 'Custom APN vereist' },
+    ],
+    units: [
+      { id: 'u1', imei: '', type: 'Smart5' },
+      { id: 'u2', imei: '', type: 'Smart5' },
+      { id: 'u3', imei: '', type: 'Smart5' },
+    ],
+  },
+  {
+    id: 'zcrm_005',
+    orderNumber: 'RCO-0046',
+    account: 'Taxi Maastricht Centraal',
+    address:
+      'Installatiebedrijf Heuvelland — Limburgstraat 88 (afwijkend verzendadres)',
+    postcode: '6211 LK',
+    city: 'Maastricht',
+    status: 'In behandeling',
+    createdAt: '2026-04-23T15:50:00',
+    quoteOwner: 'Pieter Bakker',
+    salesNote:
+      'Verzenden naar installatiebedrijf, NIET naar klant. Factuur wel naar Taxi Maastricht.',
+    orderpick: [
+      { product: 'RouteConnect Eco5', quantity: 3, note: '' },
+      { product: 'ID Reader', quantity: 3, note: '' },
+    ],
+    units: [
+      { id: 'u1', imei: '861234567890123', type: 'Eco5' },
+      { id: 'u2', imei: '863712345678901', type: 'Eco5' },
+      { id: 'u3', imei: '', type: 'Eco5' },
+    ],
+  },
+];
