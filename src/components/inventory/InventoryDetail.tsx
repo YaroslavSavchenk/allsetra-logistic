@@ -60,10 +60,10 @@ export function InventoryDetail({ productId }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-3">
-              <h1 className="text-2xl font-semibold text-slate-50">
+              <h1 className="select-text text-2xl font-semibold text-slate-50">
                 {product.name}
               </h1>
-              <span className="rounded-md border border-surface-700 bg-surface-800 px-2 py-0.5 font-mono text-xs text-slate-300">
+              <span className="select-text rounded-md border border-surface-700 bg-surface-800 px-2 py-0.5 font-mono text-xs text-slate-300">
                 {product.sku}
               </span>
             </div>

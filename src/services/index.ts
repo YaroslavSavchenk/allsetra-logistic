@@ -147,6 +147,9 @@ export const inventoryService: InventoryService = {
   async listPurchaseOrders() {
     return activeInventory.listPurchaseOrders();
   },
+  async deletePurchaseOrder(poId) {
+    return activeInventory.deletePurchaseOrder(poId);
+  },
   async adjustStock(productId, delta, reason) {
     return activeInventory.adjustStock(productId, delta, reason);
   },

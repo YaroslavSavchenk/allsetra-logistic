@@ -16,10 +16,40 @@
   body {
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     overscroll-behavior: none;
+    /* Stop accidental drag-selection of UI chrome from creating a "moving"
+       selection rectangle when the user sweeps the mouse across the app.
+       Specific text fields opt back in via .select-text. */
+    user-select: none;
+    -webkit-user-select: none;
+    /* Stop the browser from treating fast mouse-down + drag movements as
+       native HTML5 drag-and-drop on non-draggable elements. */
+    -webkit-user-drag: none;
   }
 
   *:focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-surface-950;
+  }
+
+  /* Make scrollbars stable so columns don't shift width when content
+     briefly overflows or stops overflowing. */
+  .scroll-thin,
+  .overflow-y-auto,
+  .overflow-auto {
+    scrollbar-gutter: stable;
+  }
+
+  /* Re-enable text selection inside text-bearing controls — search fields,
+     IMEI inputs, textareas, the IMEI display, the address blocks, the
+     waybill content. Logistics still needs to copy/paste. */
+  input,
+  textarea,
+  [contenteditable='true'],
+  pre,
+  code,
+  .select-text,
+  .select-text * {
+    user-select: text;
+    -webkit-user-select: text;
   }
 }
 

@@ -32,10 +32,16 @@ export function buildWaybillHtml(
   const unitsCount = order.units.length;
 
   const totalLabel = buildTotalLabel(unitsCount, accessoiresQty);
-  const generatedAtStr = formatDateTimeLong(new Date());
+  const generatedAt = new Date();
+  const generatedAtStr = formatDateTimeLong(generatedAt);
+  // Verzenddatum is the operational ship-out date logistics commits to.
+  // For an order that's already shipped (status Verstuurd) we use the audit
+  // timestamp `shippedAt`; for a not-yet-shipped order the pakbon is being
+  // printed during the inpakken-stap so the package goes out today.
+  const verzenddatumIso = order.shippedAt ?? generatedAt.toISOString();
 
   const headerLeft = renderHeaderLeft(company);
-  const headerRight = renderHeaderRight(order);
+  const headerRight = renderHeaderRight(order, verzenddatumIso);
   const addressBlock = renderAddressBlock(order);
   const unitsSection = unitsCount > 0 ? renderUnitsSection(order) : '';
   const accessoiresSection =
@@ -126,6 +132,13 @@ export function buildWaybillHtml(
     color: #444444;
     margin-top: 4pt;
   }
+  .shipped-at-label {
+    font-weight: 700;
+    letter-spacing: 0.5pt;
+    text-transform: uppercase;
+    font-size: 8pt;
+    color: #222222;
+  }
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -210,13 +223,15 @@ export function buildWaybillHtml(
     font-weight: 700;
     margin: 0 0 12pt 0;
   }
-  .signature {
-    font-size: 9pt;
+  .pack-note {
+    margin: 12pt 0 14pt 0;
+    padding: 6pt 10pt;
+    border: 1px dashed #999999;
+    border-radius: 3pt;
+    font-style: italic;
     color: #444444;
-    margin: 0 0 14pt 0;
-  }
-  .signature-line {
-    letter-spacing: 0.5pt;
+    text-align: center;
+    font-size: 9.5pt;
   }
   .footer-meta {
     font-size: 8pt;
@@ -242,10 +257,7 @@ export function buildWaybillHtml(
 
     <div class="footer">
       <p class="footer-total">Eindtotaal: ${escape(totalLabel)}</p>
-      <p class="signature">
-        Handtekening ontvanger:
-        <span class="signature-line">____________________________________</span>
-      </p>
+      <p class="pack-note">Deze pakbon hoort bij de zending — voeg hem toe in het verzendpakket.</p>
       <p class="footer-meta">Pakbon gegenereerd: ${escape(generatedAtStr)}</p>
     </div>
   </div>
@@ -268,10 +280,17 @@ function renderHeaderLeft(company: CompanyInfo): string {
       <p class="company-meta">${escape(company.kvk)} · ${escape(company.btw)}</p>`;
 }
 
-function renderHeaderRight(order: Order): string {
+function renderHeaderRight(order: Order, verzenddatumIso: string): string {
+  // Two distinct date lines:
+  // - Verzenddatum: when the package goes out the door (today for not-yet-
+  //   shipped orders, shippedAt for shipped orders).
+  // - Verzonden: audit timestamp of the status flip to Verstuurd; "—" until
+  //   the order has actually been shipped. Both shown even when they refer
+  //   to the same day — they convey different info (operational vs. audit).
   return `<p class="pakbon-title">Pakbon</p>
       <p class="order-number">#${escape(order.orderNumber || '—')}</p>
-      <p class="shipped-at">Verzonden: ${escape(formatDateLong(order.shippedAt))}</p>`;
+      <p class="shipped-at"><span class="shipped-at-label">Verzenddatum:</span> ${escape(formatDateLong(verzenddatumIso))}</p>
+      <p class="shipped-at"><span class="shipped-at-label">Verzonden:</span> ${escape(formatDateLong(order.shippedAt))}</p>`;
 }
 
 function renderAddressBlock(order: Order): string {

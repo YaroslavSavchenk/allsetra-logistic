@@ -37,6 +37,13 @@ export interface InventoryService {
   receivePurchaseOrder(poId: string, productId: string): Promise<PurchaseOrder>;
   listPurchaseOrders(): Promise<PurchaseOrder[]>;
 
+  /**
+   * Verwijder een open inkooporder. Alleen toegestaan voor PO's met
+   * status `'open'` — een ontvangen PO heeft al voorraad bewegingen
+   * gegenereerd en blijft als audit-spoor staan.
+   */
+  deletePurchaseOrder(poId: string): Promise<void>;
+
   adjustStock(
     productId: string,
     delta: number,

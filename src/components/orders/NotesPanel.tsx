@@ -34,7 +34,7 @@ export function NotesPanel({ notes, source }: Props) {
       <ul className="divide-y divide-amber-500/20">
         {notes.map((note) => (
           <li key={note.id} className="px-4 py-3">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-amber-50">
+            <p className="select-text whitespace-pre-wrap text-sm leading-relaxed text-amber-50">
               {note.content}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-amber-200/70">

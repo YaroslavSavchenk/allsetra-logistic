@@ -244,9 +244,11 @@ config is the SKU.
   openen"** action so logistics can print before moving on. The same order
   also appears at the top of the Verzonden tab thanks to cross-tab
   invalidation.
-- Negative stock after deduction is **allowed** — logistics gets a
-  warning toast but the ship proceeds. They sometimes know more than the
-  system (off-system count, last-minute restock).
+- "Versturen" doet eerst een pre-flight stock check via `listInventory()`.
+  Als één of meer picked producten te weinig voorraad hebben, wordt een
+  `InsufficientStockError` gegooid en het versturen wordt afgebroken —
+  niets wordt gemuteerd. De foutmelding ("Geen voorraad beschikbaar")
+  noemt de specifieke producten met available/requested.
 
 ## Architecture: Zoho-readiness
 
@@ -261,6 +263,8 @@ All persistence goes through service interfaces. There are two:
 - **`InventoryService`** — `listInventory()`, `getProduct(productId)`,
   `listProducts()` (catalogue for the picker),
   `registerPurchaseOrder(items, note?)`, `receivePurchaseOrder(poId)`,
+  `deletePurchaseOrder(poId)` (only allowed on `'open'` PO's — reverts the
+  pending `opBestelling` bump, no movement row),
   `listPurchaseOrders()`, `adjustStock(productId, delta, reason)`,
   `deductForShipment(orderId, picks)`, `listMovements(productId?)`.
 
@@ -378,6 +382,12 @@ minimize clicks and keep feedback immediate.
   array plus a `<NewTab />` mount.
 - Tabs are generic: `TopNav` is parameterised on a `TabDefinition<Id>` array,
   so adding a fourth tab does not require any structural change.
+- **All three tab bodies stay mounted at all times** — `App.tsx` toggles
+  visibility via `display: none` on the inactive ones. This preserves each
+  tab's local state (selectedId, search input, etc.) across switches so
+  the user lands back where they were instead of on an auto-selected
+  default. React Query cache was already shared via the single
+  `QueryClient`; this only changes how component-local state survives.
 
 ### Orders tab
 
@@ -469,8 +479,18 @@ minimize clicks and keep feedback immediate.
 - **Keyboard-first**: Tab between fields, Enter to advance — no mouse
   required for the core task
 - **Feedback**: toast notifications via `sonner` only — never modals
-- **Negative-stock toast**: when a ship pushes any picked product below
-  zero, surface a warning toast but never block the ship
+- **Voorraad-failover toast**: bij onvoldoende voorraad blokkeert het
+  versturen vóór mutatie en toont een duidelijke foutmelding ("Geen
+  voorraad beschikbaar") met available/requested per product
+- **Destructive confirms**: PO verwijderen + PO aanmaken hebben een
+  inline bevestiging-rij (geen modals, geen `window.confirm`) — dezelfde
+  Tailwind chrome als de rest van het scherm. Annuleren is altijd een
+  expliciete optie; klik-buiten dismist niet
+- **`user-select: none` op de body**, met opt-in via `select-text` op
+  ordernummer/account/adres/notes/SKU. Voorkomt dat een snelle muis-
+  sweep een selectierechthoek over de hele UI sleept (de "modules niet
+  statisch" bug). `scrollbar-gutter: stable` op alle scroll containers
+  voorkomt kolombreedte-flicker bij content-overflow
 
 No mobile. No playful aesthetic — this is a workstation.
 

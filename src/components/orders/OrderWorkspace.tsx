@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Calendar,
+  Eye,
+  FileText,
   Loader2,
   MapPin,
   Package,
@@ -12,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { Order, Unit } from '@/types/order';
 import {
+  InsufficientStockError,
   useOrder,
   useShipOrder,
   useUpdateOrderUnits,
@@ -84,7 +87,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
         productId: p.productId,
         qty: p.quantity,
       }));
-      const { order: shipped, negatives } = await shipOrder.mutateAsync({
+      const { order: shipped } = await shipOrder.mutateAsync({
         id: order.id,
         picks,
       });
@@ -101,13 +104,22 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
           onClick: () => setWaybillOrder(shipped),
         },
       });
-      if (negatives.length > 0) {
-        toast.warning('Voorraad nu negatief', {
-          description: `${negatives.length} product(en) onder 0 — controleer telling.`,
-        });
-      }
       onShipped();
     } catch (e) {
+      if (e instanceof InsufficientStockError) {
+        // Pre-flight check blocked the ship — name the products with their
+        // actual numbers so logistics knows exactly what's short. Sonner
+        // renders newlines in the description, but we fall back to " · "
+        // separators for readability if a single line is preferred.
+        const lines = e.shortfalls.map(
+          (s) =>
+            `${s.productName}: ${s.available} beschikbaar, ${s.requested} nodig`,
+        );
+        toast.error('Geen voorraad beschikbaar', {
+          description: lines.join('\n'),
+        });
+        return;
+      }
       toast.error('Versturen mislukt', {
         description: e instanceof Error ? e.message : 'Onbekende fout',
       });
@@ -141,12 +153,12 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-3">
-              <h1 className="font-mono text-2xl font-semibold text-slate-50">
+              <h1 className="select-text font-mono text-2xl font-semibold text-slate-50">
                 {order.orderNumber}
               </h1>
               <StatusBadge status={order.status} />
             </div>
-            <div className="mt-1 text-lg text-slate-200">{order.account}</div>
+            <div className="mt-1 select-text text-lg text-slate-200">{order.account}</div>
           </div>
           <dl className="flex flex-col gap-1 text-right text-xs text-slate-400">
             <div className="flex items-center justify-end gap-1.5">
@@ -167,7 +179,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           <div>
             <SectionHeader icon={MapPin} title="Verzendadres" />
-            <div className="rounded-lg border border-surface-700 bg-surface-850 px-4 py-3 text-sm leading-relaxed text-slate-200">
+            <div className="select-text rounded-lg border border-surface-700 bg-surface-850 px-4 py-3 text-sm leading-relaxed text-slate-200">
               <div className="whitespace-pre-wrap">{order.address}</div>
               <div className="mt-0.5 text-slate-300">
                 {order.postcode} {order.city}
@@ -198,6 +210,25 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
               }}
               onBlur={persistUnits}
             />
+          </section>
+        )}
+
+        {packed && (
+          <section>
+            <SectionHeader icon={FileText} title="Pakbon" />
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-surface-700 bg-surface-850 px-4 py-4">
+              <div className="text-sm text-slate-300">
+                Pakbon is klaar — voeg hem toe aan het verzendpakket.
+              </div>
+              <button
+                type="button"
+                onClick={openWaybillForCurrent}
+                className="inline-flex items-center gap-2 rounded-md border border-surface-600 bg-surface-800 px-4 py-2 text-sm font-semibold text-slate-100 transition-colors hover:bg-surface-700"
+              >
+                <Eye className="h-4 w-4" />
+                Pakbon openen
+              </button>
+            </div>
           </section>
         )}
       </div>

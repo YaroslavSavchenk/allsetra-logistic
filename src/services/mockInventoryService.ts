@@ -164,6 +164,28 @@ export class MockInventoryService implements InventoryService {
     return delay(clone(sorted));
   }
 
+  async deletePurchaseOrder(poId: string): Promise<void> {
+    const po = this.purchaseOrders.find((p) => p.id === poId);
+    if (!po) {
+      throw new Error(`Inkooporder ${poId} niet gevonden`);
+    }
+    if (po.status !== 'open') {
+      throw new Error('Alleen open inkooporders kunnen verwijderd worden');
+    }
+
+    // Reverse the `opBestelling` bump that `registerPurchaseOrder` did at
+    // creation. No `opVoorraad` change and no movement row — physical stock
+    // never moved for an open PO, so there is nothing to audit.
+    for (const line of po.items) {
+      if (line.receivedAt) continue;
+      const inv = this.findOrCreate(line.productId);
+      inv.opBestelling = Math.max(0, inv.opBestelling - line.qty);
+    }
+
+    this.purchaseOrders = this.purchaseOrders.filter((p) => p.id !== poId);
+    return delay(undefined);
+  }
+
   async adjustStock(
     productId: string,
     delta: number,

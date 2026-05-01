@@ -241,9 +241,12 @@ scripts/
   inclusief direct bruikbare pakbon-knop.
 - Direct na verzending verschijnt nóg een toast met **Pakbon openen** —
   vangnet voor het geval logistiek bij de inpakken-stap niet heeft geprint.
-- Bij versturen schrijft de app de aantallen uit `orderpick` af van
-  `opVoorraad`. Negatieve voorraad geeft een waarschuwingstoast maar
-  blokkeert het versturen niet.
+- Bij versturen doet de app eerst een pre-flight voorraadcheck. Als één
+  of meer producten uit `orderpick` te weinig `opVoorraad` hebben, wordt
+  het versturen geblokkeerd vóór er iets gemuteerd wordt en verschijnt de
+  toast "Geen voorraad beschikbaar" met per product available/requested.
+  Slaagt de check, dan worden de aantallen uit `orderpick` afgeschreven
+  van `opVoorraad`.
 
 Volledige regels staan in [`CLAUDE.md`](./CLAUDE.md).
 

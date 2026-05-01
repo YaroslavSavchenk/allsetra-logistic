@@ -97,6 +97,17 @@ export function useReceivePurchaseOrder() {
   });
 }
 
+export function useDeletePurchaseOrder() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (poId) => inventoryService.deletePurchaseOrder(poId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PURCHASE_ORDERS_KEY });
+      qc.invalidateQueries({ queryKey: INVENTORY_KEY }); // opBestelling totals on the inventory rows
+    },
+  });
+}
+
 export function useAdjustStock() {
   const qc = useQueryClient();
   return useMutation({

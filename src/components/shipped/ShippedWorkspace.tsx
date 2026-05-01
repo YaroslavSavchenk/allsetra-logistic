@@ -50,12 +50,12 @@ export function ShippedWorkspace({ orderId }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-3">
-              <h1 className="font-mono text-2xl font-semibold text-slate-50">
+              <h1 className="select-text font-mono text-2xl font-semibold text-slate-50">
                 {order.orderNumber}
               </h1>
               <StatusBadge status={order.status} />
             </div>
-            <div className="mt-1 text-lg text-slate-200">{order.account}</div>
+            <div className="mt-1 select-text text-lg text-slate-200">{order.account}</div>
             {order.shippedAt && (
               <div className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-200">
                 <PackageCheck className="h-3.5 w-3.5" />
@@ -82,7 +82,7 @@ export function ShippedWorkspace({ orderId }: Props) {
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           <div>
             <SectionHeader icon={MapPin} title="Verzendadres" />
-            <div className="rounded-lg border border-surface-700 bg-surface-850 px-4 py-3 text-sm leading-relaxed text-slate-200">
+            <div className="select-text rounded-lg border border-surface-700 bg-surface-850 px-4 py-3 text-sm leading-relaxed text-slate-200">
               <div className="whitespace-pre-wrap">{order.address}</div>
               <div className="mt-0.5 text-slate-300">
                 {order.postcode} {order.city}
