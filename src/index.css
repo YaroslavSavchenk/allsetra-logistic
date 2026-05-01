@@ -21,9 +21,26 @@
        Specific text fields opt back in via .select-text. */
     user-select: none;
     -webkit-user-select: none;
-    /* Stop the browser from treating fast mouse-down + drag movements as
-       native HTML5 drag-and-drop on non-draggable elements. */
+  }
+
+  /* Kill HTML5 drag-and-drop on every element. CSS user-drag is NOT
+     inherited per-element in Chromium/WebView2 — applying it only to body
+     leaves children draggable. Setting it on `*` plus the explicit common
+     "draggable by default" tags (img/svg/a) prevents the translucent
+     drag-image ghost that follows the cursor when a user drags from inside
+     a text selection. The `draggable="false"` attribute set in main.tsx is
+     the belt-and-braces companion. */
+  *,
+  *::before,
+  *::after {
     -webkit-user-drag: none;
+    user-drag: none;
+  }
+  img,
+  svg,
+  a {
+    -webkit-user-drag: none;
+    user-drag: none;
   }
 
   *:focus-visible {
