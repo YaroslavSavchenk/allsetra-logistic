@@ -9,7 +9,7 @@ import {
   Building2,
   AlertCircle,
 } from 'lucide-react';
-import type { Unit } from '@/types/order';
+import type { Order, Unit } from '@/types/order';
 import {
   useOrder,
   useShipOrder,
@@ -20,6 +20,7 @@ import { StatusBadge } from './StatusBadge';
 import { NotesPanel } from './NotesPanel';
 import { OrderpickList } from './OrderpickList';
 import { UnitsTable, computeRowValidations } from './UnitsTable';
+import { WaybillViewer } from '@/components/waybill/WaybillViewer';
 
 interface Props {
   orderId: string;
@@ -33,6 +34,10 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
 
   const [units, setUnits] = useState<Unit[]>([]);
   const [dirty, setDirty] = useState(false);
+  // Waybill modal lives at workspace level so the toast action can pop it
+  // open without depending on routing — the order is already in flight to
+  // the Verzonden tab, but we want logistics to print *before* moving on.
+  const [waybillOrder, setWaybillOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (order) {
@@ -75,6 +80,11 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
           unitsCount > 0
             ? `${shipped.account} — ${unitsCount} units`
             : `${shipped.account} — ${itemsCount} items`,
+        duration: 8000,
+        action: {
+          label: 'Pakbon openen',
+          onClick: () => setWaybillOrder(shipped),
+        },
       });
       if (negatives.length > 0) {
         toast.warning('Voorraad nu negatief', {
@@ -203,6 +213,14 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
           </button>
         </div>
       </footer>
+
+      {waybillOrder && (
+        <WaybillViewer
+          order={waybillOrder}
+          isOpen={waybillOrder !== null}
+          onClose={() => setWaybillOrder(null)}
+        />
+      )}
     </div>
   );
 }

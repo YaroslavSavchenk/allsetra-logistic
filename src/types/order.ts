@@ -52,6 +52,12 @@ export interface Order {
   city: string;
   status: OrderStatus;
   createdAt: string;
+  /**
+   * Set by `markAsShipped` when the order transitions to `Verstuurd`. Drives
+   * the Verzonden tab sort order and the pakbon header. Null for any order
+   * that hasn't shipped yet.
+   */
+  shippedAt: string | null;
   quoteOwner: string;
   source: OrderSource;
   notes: OrderNote[];

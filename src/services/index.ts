@@ -78,6 +78,14 @@ export const orderService: OrderService = {
     await resolved;
     return active.createOrder(draft);
   },
+  async listShippedOrders(opts) {
+    await resolved;
+    return active.listShippedOrders(opts);
+  },
+  async getShippedOrder(id) {
+    await resolved;
+    return active.getShippedOrder(id);
+  },
 };
 
 /**

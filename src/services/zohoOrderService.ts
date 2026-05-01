@@ -1,6 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Order, Unit } from '@/types/order';
-import type { OrderDraft, OrderService } from './orderService';
+import type {
+  ListShippedOrdersOptions,
+  OrderDraft,
+  OrderService,
+} from './orderService';
 
 /**
  * Calls out to the Rust-side Zoho client via Tauri commands. The Rust side
@@ -45,6 +49,27 @@ export const zohoOrderService: OrderService = {
         'Logistiek-orders maken is nog niet beschikbaar in Zoho-modus — schakel eerst de mock back-end in of vraag de Zoho-push-flow aan.',
       ),
     );
+  },
+
+  // Zoho-side: search met `(Status:equals:Verstuurd)` gesorteerd op
+  // Modified_Time desc. Rust-zijde mapt search options naar de juiste
+  // criteria-string en hergebruikt de bestaande mapper.
+  listShippedOrders(opts?: ListShippedOrdersOptions) {
+    return invoke<Order[]>('zoho_fetch_shipped_orders', {
+      limit: opts?.limit ?? 50,
+      search: opts?.search ?? '',
+    });
+  },
+
+  async getShippedOrder(id) {
+    try {
+      return await invoke<Order>('zoho_fetch_order', { id });
+    } catch (err) {
+      if (typeof err === 'string' && err.toLowerCase().includes('niet gevonden')) {
+        return null;
+      }
+      throw err;
+    }
   },
 };
 

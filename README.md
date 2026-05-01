@@ -3,10 +3,11 @@
 Interne desktop-applicatie voor het logistiek team van Allsetra. De app is
 gestart als IMEI-flow voor RouteConnect tracking-devices (Eco5, HCV5-Lite,
 Smart5) en doet inmiddels alle logistiek: tracker-orders met IMEI's, plus
-productlijnen zonder IMEI (accessoires, fietsbeveiliging, sensors). Twee
+productlijnen zonder IMEI (accessoires, fietsbeveiliging, sensors). Drie
 tabs bovenaan: **Orders** (klantorders prepen + versturen, óf zelf een
-order aanmaken voor ad-hoc verzendingen) en **Voorraad** (per product de
-stand, openstaande inkooporders en mutatiehistorie).
+order aanmaken voor ad-hoc verzendingen), **Verzonden** (alle verstuurde
+orders met pakbon-PDF — openen, printen, downloaden) en **Voorraad** (per
+product de stand, openstaande inkooporders en mutatiehistorie).
 
 Twee orderstromen:
 
@@ -36,6 +37,7 @@ of uit de lokale productregistratie (mock mode); de UI is hetzelfde.
 | Data fetching     | TanStack Query 5               |
 | Toast feedback    | Sonner                         |
 | Iconen            | lucide-react                   |
+| Pakbon (PDF)      | @react-pdf/renderer            |
 
 **Tauri gekozen boven Electron** omdat:
 
@@ -44,6 +46,12 @@ of uit de lokale productregistratie (mock mode); de UI is hetzelfde.
 - Rust backend heeft een kleiner aanvalsoppervlak — belangrijk omdat hier
   straks de Zoho Client Secret & Refresh Token leven.
 - Opstarttijd en RAM-gebruik zijn significant lager.
+
+**`@react-pdf/renderer` gekozen voor de pakbon** omdat HTML→PDF via canvas
+(jsPDF + html2canvas) rasterized output geeft — wazig op echte printers.
+`@react-pdf/renderer` bouwt de PDF declaratief uit React-componenten en
+levert echte vector-pagina's. Eén template (`WaybillDocument`) wordt
+hergebruikt voor élke order — geen one-off generators per ordertype.
 
 ## Voor de eindgebruiker (logistiek medewerker)
 
@@ -158,10 +166,14 @@ src/                          Frontend (React + TS)
 ├── lib/
 │   ├── productStrategy.ts    Productregistratie + IMEI-prefix index
 │   ├── imei.ts               Pure functies: validateImei(), detectProductFromImei()
-│   └── format.ts             Datum/tijd formatter (nl-NL)
+│   ├── format.ts             Datum/tijd formatter (nl-NL)
+│   └── relativeDate.ts       Relatieve datum (vandaag/gisteren/N dagen geleden)
+├── config/
+│   └── company.ts            COMPANY_INFO — placeholder pakbon-bedrijfsgegevens
 ├── services/
-│   ├── orderService.ts       OrderService interface (incl. createOrder)
-│   ├── mockOrderService.ts   Mock implementatie (LCO-numbering)
+│   ├── orderService.ts       OrderService interface (incl. createOrder +
+│   │                         listShippedOrders/getShippedOrder)
+│   ├── mockOrderService.ts   Mock implementatie (LCO-numbering, shippedAt)
 │   ├── zohoOrderService.ts   Tauri-invoke shim (live mode)
 │   ├── inventoryService.ts   InventoryService interface (incl. listProducts)
 │   ├── mockInventoryService.ts
@@ -169,6 +181,7 @@ src/                          Frontend (React + TS)
 │   └── index.ts              Façade — kiest mock of live per service
 ├── hooks/
 │   ├── useOrders.ts          Orders + composeert deductForShipment in useShipOrder
+│   │                         + useShippedOrders/useShippedOrder
 │   ├── useInventory.ts       Voorraad-hooks; exporteert query-keys
 │   └── useAppUpdate.ts       Auto-update prompt
 ├── components/
@@ -177,6 +190,11 @@ src/                          Frontend (React + TS)
 │   ├── UpdatePrompt.tsx
 │   ├── orders/               OrdersTab + Sidebar, OrderWorkspace,
 │   │                         NewOrderForm, …
+│   ├── shipped/              Verzonden tab — ShippedTab, ShippedSidebar,
+│   │                         ShippedWorkspace (read-only + pakbon-knop)
+│   ├── waybill/              Pakbon: WaybillDocument (@react-pdf template),
+│   │                         WaybillViewer (modal met print/download),
+│   │                         waybillStyles
 │   └── inventory/            InventoryTab + tabel/detail/forms/audit
 ├── App.tsx                   Tab-switch
 └── main.tsx                  Single QueryClient
@@ -214,8 +232,11 @@ scripts/
 - "Versturen" werkt pas als **alle** units een geldige IMEI hebben (of meteen
   voor orders zonder IMEI-producten).
 - Een open order schuift automatisch naar `In behandeling` zodra er een IMEI
-  wordt ingevuld; naar `Verstuurd` na een succesvolle versturen-actie
-  (daarna verdwijnt hij uit de lijst).
+  wordt ingevuld; naar `Verstuurd` na een succesvolle versturen-actie. Hij
+  verdwijnt uit de Orders-lijst en verschijnt boven in de Verzonden-tab,
+  inclusief direct bruikbare pakbon-knop.
+- Direct na verzending verschijnt een toast met **Pakbon openen** zodat de
+  pakbon geprint kan worden vóór de volgende order wordt opgepakt.
 - Bij versturen schrijft de app de aantallen uit `orderpick` af van
   `opVoorraad`. Negatieve voorraad geeft een waarschuwingstoast maar
   blokkeert het versturen niet.
@@ -260,6 +281,44 @@ Beide refereren producten alleen via hun `id` uit `productStrategy.ts`.
 **Nieuwe voorraad-rij** (`mockInventory.ts`): één entry per `productId` met
 `opVoorraad`, `opBestelling`, `lastMovementAt`. Open `MOCK_PURCHASE_ORDERS`
 voor een seed inkooporder.
+
+**Verstuurde mock-orders**: `mockData.ts` bevat 4 voorbeeld-orders met
+status `Verstuurd` zodat de Verzonden-tab niet leeg is bij eerste start
+(twee tracker-orders, één met alleen accessoires/fietsbeveiliging, en één
+logistics-created LCO-order). Alle vier hebben een `shippedAt` zodat ze in
+de Verzonden-sidebar verschijnen op verzenddatum.
+
+## Pakbon (Verzonden tab)
+
+Elke verstuurde order heeft een **pakbon** — vector PDF, A4 portrait,
+hergeneerd uit de live order-data (geen archief, Zoho is bron van
+waarheid). De PDF is opgebouwd uit één herbruikbaar React-component:
+[`WaybillDocument`](./src/components/waybill/WaybillDocument.tsx). Eén
+template voor alle product-lijnen — RouteConnect, accessoires,
+fietsbeveiliging, sensors. Long-list overflow loopt automatisch door over
+meerdere pagina's met repeating header en footer. Edge cases (lege units,
+lege accessoires, ontbrekende velden) crashen niet maar tonen "—" of slaan
+de sectie over.
+
+Drie acties in de UI:
+
+- **Pakbon openen** — modal met inline PDF-preview (`<PDFViewer>`).
+- **Downloaden** — `pakbon-{ordernummer}.pdf` op een door de gebruiker
+  gekozen locatie.
+- **Printen** — opent de OS-print dialoog op de PDF.
+
+De viewer wordt op twee plekken aangeroepen:
+
+1. In de Verzonden-tab workspace via een knop in de Pakbon-sectie.
+2. Als toast-actie direct na het versturen van een order — zo kan de
+   pakbon geprint worden vóór de volgende order wordt opgepakt.
+
+**Bedrijfsgegevens** (naam, adres, KvK, BTW, eventueel logo) staan in
+[`src/config/company.ts`](./src/config/company.ts) als `COMPANY_INFO`
+constant. **Placeholder-waarden — vervang vóór productie.** Geen
+runtime-config, geen instellingenscherm; deze waarden worden in de binary
+gecompileerd. Een logo activeer je door `src/assets/logo.png` toe te
+voegen en het `logoPath` veld in `COMPANY_INFO` te zetten.
 
 ## Logistiek-orders zelf maken
 

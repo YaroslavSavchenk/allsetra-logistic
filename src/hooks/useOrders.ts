@@ -5,12 +5,30 @@ import type { InventoryItem } from '@/types/inventory';
 import { INVENTORY_KEY, MOVEMENTS_KEY } from './useInventory';
 
 const OPEN_ORDERS_KEY = ['orders', 'open'] as const;
+const SHIPPED_ORDERS_KEY = ['orders', 'shipped'] as const;
 const orderKey = (id: string) => ['orders', 'byId', id] as const;
+const shippedOrderKey = (id: string) =>
+  ['orders', 'shipped', 'byId', id] as const;
 
 export function useOpenOrders() {
   return useQuery({
     queryKey: OPEN_ORDERS_KEY,
     queryFn: () => orderService.getOpenOrders(),
+  });
+}
+
+export function useShippedOrders(search?: string) {
+  return useQuery({
+    queryKey: [...SHIPPED_ORDERS_KEY, { search: search ?? '' }] as const,
+    queryFn: () => orderService.listShippedOrders({ search }),
+  });
+}
+
+export function useShippedOrder(id: string | null) {
+  return useQuery({
+    queryKey: id ? shippedOrderKey(id) : ['orders', 'shipped', 'byId', 'none'],
+    queryFn: () => (id ? orderService.getShippedOrder(id) : null),
+    enabled: id !== null,
   });
 }
 
@@ -84,7 +102,9 @@ export function useShipOrder() {
     },
     onSuccess: ({ order }) => {
       qc.setQueryData(orderKey(order.id), order);
+      qc.setQueryData(shippedOrderKey(order.id), order);
       qc.invalidateQueries({ queryKey: OPEN_ORDERS_KEY });
+      qc.invalidateQueries({ queryKey: SHIPPED_ORDERS_KEY });
       qc.invalidateQueries({ queryKey: MOVEMENTS_KEY });
     },
   });

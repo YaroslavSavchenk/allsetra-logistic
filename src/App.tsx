@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Boxes, ListChecks } from 'lucide-react';
+import { Boxes, ListChecks, PackageCheck } from 'lucide-react';
 import { TopNav, type TabDefinition } from '@/components/TopNav';
 import { OrdersTab } from '@/components/orders/OrdersTab';
 import { InventoryTab } from '@/components/inventory/InventoryTab';
+import { ShippedTab } from '@/components/shipped/ShippedTab';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
 
-type TabId = 'orders' | 'inventory';
+type TabId = 'orders' | 'shipped' | 'inventory';
 
 const TABS: ReadonlyArray<TabDefinition<TabId>> = [
   { id: 'orders', label: 'Orders', icon: ListChecks },
+  { id: 'shipped', label: 'Verzonden', icon: PackageCheck },
   { id: 'inventory', label: 'Voorraad', icon: Boxes },
 ];
 
@@ -20,6 +22,7 @@ export default function App() {
       <TopNav tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="flex-1 overflow-hidden">
         {activeTab === 'orders' && <OrdersTab />}
+        {activeTab === 'shipped' && <ShippedTab />}
         {activeTab === 'inventory' && <InventoryTab />}
       </div>
       <UpdatePrompt />

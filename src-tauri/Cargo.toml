@@ -1,6 +1,6 @@
 [package]
 name = "routeconnect-logistiek"
-version = "0.2.1"
+version = "0.3.0"
 description = "Logistiek Allsetra — interne werkomgeving voor het Allsetra logistiek team"
 authors = ["Allsetra"]
 edition = "2021"

@@ -2,7 +2,13 @@ import type { Order, Unit } from '@/types/order';
 import { OPEN_STATUSES } from '@/types/order';
 import { MOCK_ORDERS } from '@/data/mockData';
 import { isImeiProduct } from '@/lib/productStrategy';
-import type { OrderDraft, OrderService } from './orderService';
+import type {
+  ListShippedOrdersOptions,
+  OrderDraft,
+  OrderService,
+} from './orderService';
+
+const SHIPPED_DEFAULT_LIMIT = 50;
 
 const SIMULATED_LATENCY_MS = 120;
 
@@ -67,7 +73,38 @@ export class MockOrderService implements OrderService {
     if (!order) throw new Error(`Order ${id} niet gevonden`);
 
     order.status = 'Verstuurd';
+    order.shippedAt = nowIso();
     return delay(clone(order));
+  }
+
+  async listShippedOrders(opts?: ListShippedOrdersOptions): Promise<Order[]> {
+    const limit = opts?.limit ?? SHIPPED_DEFAULT_LIMIT;
+    const q = opts?.search?.trim().toLowerCase() ?? '';
+    const shipped = this.orders
+      .filter((o) => o.status === 'Verstuurd')
+      .filter((o) => {
+        if (!q) return true;
+        return (
+          o.orderNumber.toLowerCase().includes(q) ||
+          o.account.toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        // Recentste boven. shippedAt should always exist for Verstuurd
+        // orders, but fall back to createdAt defensively.
+        const ta = new Date(a.shippedAt ?? a.createdAt).getTime();
+        const tb = new Date(b.shippedAt ?? b.createdAt).getTime();
+        return tb - ta;
+      })
+      .slice(0, limit);
+    return delay(clone(shipped));
+  }
+
+  async getShippedOrder(id: string): Promise<Order | null> {
+    const order = this.orders.find(
+      (o) => o.id === id && o.status === 'Verstuurd',
+    );
+    return delay(order ? clone(order) : null);
   }
 
   async createOrder(draft: OrderDraft): Promise<Order> {
@@ -115,6 +152,7 @@ export class MockOrderService implements OrderService {
       city: draft.city.trim(),
       status: 'Nieuw',
       createdAt: ts,
+      shippedAt: null,
       quoteOwner: 'Logistiek',
       source: 'logistics',
       notes: draft.note?.trim()

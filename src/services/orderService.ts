@@ -16,6 +16,14 @@ export interface OrderDraft {
   orderpick: OrderpickItem[];
 }
 
+/** Filter/paging options for the shipped-orders feed. */
+export interface ListShippedOrdersOptions {
+  /** Cap the number of returned orders. Defaults to 50 server-side. */
+  limit?: number;
+  /** Free-text filter — matched against order number and account. */
+  search?: string;
+}
+
 /**
  * Interface that abstracts order persistence. Components depend on this, not
  * on a specific implementation. `MockOrderService` is used today; a
@@ -35,4 +43,15 @@ export interface OrderService {
    * orders should also be pushed into Zoho or stay local-only.
    */
   createOrder(draft: OrderDraft): Promise<Order>;
+  /**
+   * Orders with status `Verstuurd`, sorted by `shippedAt` desc (recentste
+   * boven). Drives the Verzonden tab feed.
+   */
+  listShippedOrders(opts?: ListShippedOrdersOptions): Promise<Order[]>;
+  /**
+   * Single shipped order — same payload as `getOrderById`, kept as a separate
+   * method so the live Zoho impl can hit a search endpoint scoped to
+   * `Status:equals:Verstuurd` if useful.
+   */
+  getShippedOrder(id: string): Promise<Order | null>;
 }

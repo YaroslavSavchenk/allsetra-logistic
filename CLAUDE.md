@@ -7,13 +7,18 @@ fietsbeveiliging, sensors, anything Allsetra ships. RouteConnect is just the
 first product family with an IMEI flow; the architecture is product-pluggable
 so adding a new line is a config change, not a rewrite.
 
-The app has two main surfaces, switched via the top tab bar:
+The app has three surfaces, switched via the top tab bar:
 
 - **Orders** — both sales-originated orders pulled from Zoho CRM and
   ad-hoc orders that logistics creates themselves (for shipments without
   a sales quote — internal handovers, last-minute requests, accessoires-only
   drops, etc.). Logistics preps the order, scans IMEIs (only for products
   that have one), and marks it as shipped.
+- **Verzonden** — read-only feed of orders with status `Verstuurd`, sorted
+  most-recent first. Each shipped order surfaces a **pakbon** (waybill) PDF
+  that can be opened, printed, or downloaded. The pakbon is the same
+  reusable template used by the toast-action that fires right after
+  shipping, so logistics can print before moving on to the next order.
 - **Voorraad** — inventory: per-product stock (`opVoorraad`) and open
   purchase orders (`opBestelling`), plus a full mutation audit trail. Stock
   moves automatically as orders are shipped and purchase orders are received;
@@ -35,6 +40,12 @@ Zoho path (Products module fetch).
 - **Styling**: Tailwind CSS
 - **Data fetching**: TanStack Query (React Query)
 - **State**: Local component state only — no Redux/Zustand
+- **PDF**: `@react-pdf/renderer` — used by the Verzonden-tab pakbon. Picked
+  over jsPDF + html2canvas because that path renders rasterised pages
+  (blurry on real printers); `@react-pdf/renderer` produces vector PDFs from
+  declarative React components. Goes against "deps minimaal" but accepted —
+  no Tailwind in the PDF (it has its own `StyleSheet`), and only the
+  Verzonden tab pulls it in.
 - **Backend**: the Tauri Rust side IS the backend (no separate server). For now
   it just hosts the window; when Zoho lands, it'll handle OAuth + API calls
   and own the secrets.
@@ -93,6 +104,12 @@ For logistics-originated orders the `account` field stores a free-text
 recipient label (person, team, external company without a CRM record); for
 sales-originated orders it's the linked CRM Account name. The UI label
 adapts ("Ontvanger" vs "Account") but the field is the same.
+
+`shippedAt: string | null` is set by `markAsShipped` when an order
+transitions to `Verstuurd` and stays `null` for everything that hasn't
+shipped. Drives the Verzonden-tab sort (newest first) and the pakbon
+header. The pakbon template treats a `null` shippedAt defensively (renders
+"—") so it doesn't crash on partially-migrated data.
 
 Statuses: `Ter goedkeuring` | `Nieuw` | `In behandeling` | `Verstuurd`.
 Logistics only sees `Nieuw` and `In behandeling`. `Ter goedkeuring` is
@@ -216,12 +233,15 @@ config is the SKU.
 
 - Starts `Nieuw`. Moves to `In behandeling` when logistics starts editing
   IMEIs (no IMEI → stays `Nieuw` until shipped).
-- "Versturen" transitions to `Verstuurd`. For IMEI orders this only fires
-  when every Unit has a valid IMEI. For non-IMEI orders it fires
-  unconditionally.
+- "Versturen" transitions to `Verstuurd` and stamps `shippedAt`. For IMEI
+  orders this only fires when every Unit has a valid IMEI. For non-IMEI
+  orders it fires unconditionally.
 - On successful ship: inventory is decremented for every orderpick line
-  (`deductForShipment`), the order leaves the list, and the next open order
-  is auto-selected.
+  (`deductForShipment`), the order leaves the open list, the next open
+  order is auto-selected, and a success toast fires with a **"Pakbon
+  openen"** action so logistics can print before moving on. The same order
+  also appears at the top of the Verzonden tab thanks to cross-tab
+  invalidation.
 - Negative stock after deduction is **allowed** — logistics gets a
   warning toast but the ship proceeds. They sometimes know more than the
   system (off-system count, last-minute restock).
@@ -232,7 +252,10 @@ All persistence goes through service interfaces. There are two:
 
 - **`OrderService`** — `getOpenOrders()`, `getOrderById(id)`,
   `updateOrderUnits(id, units)`, `markAsShipped(id)`,
-  `createOrder(draft)` (logistics-created orders).
+  `createOrder(draft)` (logistics-created orders),
+  `listShippedOrders({ search?, limit? })` (Verzonden-tab feed,
+  newest-first, search by ordernumber/account),
+  `getShippedOrder(id)` (read-only fetch for the Verzonden workspace).
 - **`InventoryService`** — `listInventory()`, `getProduct(productId)`,
   `listProducts()` (catalogue for the picker),
   `registerPurchaseOrder(items, note?)`, `receivePurchaseOrder(poId)`,
@@ -253,18 +276,20 @@ a single internal id space spans the whole app.
 
 ### Cross-tab consistency
 
-Both tabs share the single `QueryClient` constructed in `main.tsx`. The
-shipment flow in `useShipOrder` does three things in sequence:
+All tabs share the single `QueryClient` constructed in `main.tsx`. The
+shipment flow in `useShipOrder` does four things in sequence:
 
 1. `orderService.markAsShipped(id)`
 2. `inventoryService.deductForShipment(orderId, picks)` (always — empty
    picks is a service-side no-op)
-3. Re-fetches inventory and writes the fresh list back into the cache, then
-   invalidates `OPEN_ORDERS_KEY` and `MOVEMENTS_KEY`
+3. Re-fetches inventory and writes the fresh list back into the cache
+4. Invalidates `OPEN_ORDERS_KEY`, `SHIPPED_ORDERS_KEY` and `MOVEMENTS_KEY`,
+   and pre-seeds the just-shipped order into the shipped-by-id cache so the
+   Verzonden workspace renders immediately when the user clicks through.
 
-So the moment the user switches to the Voorraad tab after shipping, the
-decremented stock and new mutation rows are already in the cache — no
-manual refresh.
+So the moment the user switches to the Voorraad or Verzonden tab after
+shipping, the decremented stock, new mutation rows, and the freshly-shipped
+order are already in the cache — no manual refresh.
 
 ### Where secrets live
 
@@ -346,11 +371,11 @@ minimize clicks and keep feedback immediate.
 ### Top-level layout
 
 - **TopNav** (full-width, ~56px tall) with the brand and a tab bar. Tabs
-  today: `Orders`, `Voorraad`. Component state in `App.tsx` switches the
-  body — no router. Adding a tab is one entry in the `TABS` array plus a
-  `<NewTab />` mount.
+  today: `Orders`, `Verzonden`, `Voorraad`. Component state in `App.tsx`
+  switches the body — no router. Adding a tab is one entry in the `TABS`
+  array plus a `<NewTab />` mount.
 - Tabs are generic: `TopNav` is parameterised on a `TabDefinition<Id>` array,
-  so adding a third or fourth tab does not require any structural change.
+  so adding a fourth tab does not require any structural change.
 
 ### Orders tab
 
@@ -364,6 +389,51 @@ minimize clicks and keep feedback immediate.
 - Ship button: large, bottom of the workspace, disabled until every IMEI is
   valid (or always enabled for non-IMEI orders). Progress text like
   "3/5 units klaar" / "Geen IMEI-producten in deze order — klaar om te versturen"
+
+### Verzonden tab
+
+- Sidebar (left, ~320px): all orders with status `Verstuurd`, sorted by
+  `shippedAt` desc. Search by ordernumber or account. Per row: ordernumber,
+  account, city, units/items count, and a relative date ("vandaag",
+  "gisteren", "N dagen geleden") for shipments ≤7 days; older falls back to
+  `dd-MM-yyyy`. Search is forwarded to the service so a future Zoho impl
+  can scope the API call instead of client-filtering.
+- Workspace (right): identical visual structure to the Orders workspace but
+  fully **read-only** — `UnitsTable` is reused with `disabled`, no
+  Versturen button, no edit affordances. Header carries an emerald
+  "Verzonden op {datum}" chip alongside the existing createdAt/quoteOwner
+  block.
+- **Pakbon-section** at the bottom of the workspace: a single `Pakbon
+  openen` button that opens `WaybillViewer` (PDFViewer in a modal with
+  Sluiten / Downloaden / Printen actions). The same modal is also opened
+  via the toast-action that fires right after shipping.
+
+### Pakbon (waybill) template
+
+- `WaybillDocument` (`src/components/waybill/WaybillDocument.tsx`) is a
+  **reusable** `@react-pdf/renderer` component: `<WaybillDocument
+  order={order} company={COMPANY_INFO} />`. One template, every order. A4
+  portrait, vector PDF, no Tailwind (uses `StyleSheet.create` from
+  `@react-pdf/renderer`).
+- Layout: company header (logo or name fallback), afleveradres block,
+  Units section (skipped when `units.length === 0`), Accessoires section
+  (skipped when no `hasIMEI === false` orderpick lines), eindtotaal +
+  signature line + page numbering footer. Header and footer are `fixed` so
+  they repeat on multipage pakbonnen; the Units/Accessoires tables wrap
+  naturally with rows pinned via `wrap={false}`.
+- **Defensive by design** — empty `units`, empty accessoires, missing
+  `shippedAt`/`account`/`address`, and absent logo all render gracefully
+  (fallback "—" or skipped sections). Never crashes on partial data.
+- Company info lives in `src/config/company.ts` (`COMPANY_INFO`). It's a
+  **placeholder constant** committed to the repo — no runtime config, no
+  settings screen. Replace the values before going live; logo path stays
+  undefined until a `logo.png` lands in `src/assets`, at which point the
+  text fallback gives way to the image.
+- The pakbon is **never persisted** — Zoho is the source of truth for
+  order data, and the PDF is regenerated on demand from the live order
+  payload. No archive table, no cached files.
+- Pakbon-number is reused from `order.orderNumber` (RCO/LCO ids). No
+  separate numbering scheme.
 
 ### Voorraad tab
 
@@ -404,12 +474,20 @@ src/                          Frontend (React + TS)
     productStrategy.ts        Product registry + IMEI prefix index (pluggable)
     imei.ts                   IMEI validation; talks to productStrategy
     format.ts                 Date/time formatter (nl-NL)
+    relativeDate.ts           Relative-day formatter (vandaag/gisteren/N dagen)
+                              used by the Verzonden sidebar
+  config/
+    company.ts                COMPANY_INFO placeholder — pakbon header data
   services/
-    orderService.ts           Interface (incl. createOrder + OrderDraft)
+    orderService.ts           Interface (incl. createOrder + OrderDraft +
+                              listShippedOrders/getShippedOrder)
     mockOrderService.ts       In-memory impl (LCO numbering, auto-generates
-                              Units for IMEI products on createOrder)
+                              Units for IMEI products on createOrder, sets
+                              shippedAt on markAsShipped, filters/sorts the
+                              shipped feed)
     zohoOrderService.ts       Tauri-invoke shim (live mode); createOrder
-                              rejects pending business decision
+                              rejects pending business decision; shipped
+                              feed calls zoho_fetch_shipped_orders
     inventoryService.ts       Interface (incl. listProducts catalogue)
     mockInventoryService.ts   In-memory impl
     zohoCatalogService.ts     Live product catalogue (Zoho Products module)
@@ -417,7 +495,8 @@ src/                          Frontend (React + TS)
   hooks/
     useOrders.ts              React Query hooks (useShipOrder composes
                               inventory deduction; useCreateOrder for the
-                              new-order flow)
+                              new-order flow; useShippedOrders/useShippedOrder
+                              for the Verzonden tab)
     useInventory.ts           Inventory + catalogue hooks; exports query keys
     useAppUpdate.ts           Auto-update prompt
   components/
@@ -429,6 +508,13 @@ src/                          Frontend (React + TS)
                               UnitsTable, OrderpickList, NotesPanel,
                               StatusBadge, EmptyState, NewOrderForm,
                               OrdersTab)
+    shipped/                  Verzonden-tab UI (ShippedSidebar,
+                              ShippedWorkspace, ShippedTab) — read-only,
+                              hosts the pakbon button
+    waybill/                  Pakbon (waybill) PDF: WaybillDocument
+                              (reusable @react-pdf/renderer template),
+                              WaybillViewer (modal with PDFViewer + print +
+                              download), waybillStyles
     inventory/                Voorraad-tab UI (InventoryTab, InventoryTable,
                               InventoryDetail, StockAdjustForm,
                               PurchaseOrderForm, OpenPurchaseOrders,
