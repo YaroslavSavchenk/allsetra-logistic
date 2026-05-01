@@ -39,7 +39,7 @@ export interface InventoryService {
 
   /**
    * Verwijder een open inkooporder. Alleen toegestaan voor PO's met
-   * status `'open'` — een ontvangen PO heeft al voorraad bewegingen
+   * status `'open'` - een ontvangen PO heeft al voorraad bewegingen
    * gegenereerd en blijft als audit-spoor staan.
    */
   deletePurchaseOrder(poId: string): Promise<void>;

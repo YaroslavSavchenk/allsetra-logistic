@@ -28,7 +28,7 @@ export function OrderpickList({ items }: Props) {
                   {item.quantity}×
                 </td>
                 <td className="px-4 py-2.5 text-slate-400">
-                  {item.note || <span className="text-slate-600">—</span>}
+                  {item.note || <span className="text-slate-600">-</span>}
                 </td>
               </tr>
             );

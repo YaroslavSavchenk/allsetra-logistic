@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
 import App from './App';
 import { CurrentUserProvider } from './contexts/CurrentUserContext';
 import './index.css';
@@ -18,7 +17,7 @@ const queryClient = new QueryClient({
 // Kill every HTML5 drag at the source. The CSS rules in index.css cover the
 // common cases, but Chromium's drag-when-text-is-selected behaviour ignores
 // `-webkit-user-drag: none` on the descendants and creates a translucent
-// drag-image that follows the cursor — looking exactly like the whole UI is
+// drag-image that follows the cursor - looking exactly like the whole UI is
 // being dragged across the screen. preventDefault() on dragstart blocks
 // every drag origin (text, images, links) regardless of what CSS says.
 //
@@ -38,17 +37,6 @@ createRoot(document.getElementById('root')!).render(
       <CurrentUserProvider>
         <App />
       </CurrentUserProvider>
-      <Toaster
-        theme="dark"
-        position="bottom-right"
-        richColors
-        closeButton
-        toastOptions={{
-          style: {
-            fontFamily: 'Inter, sans-serif',
-          },
-        }}
-      />
     </QueryClientProvider>
   </StrictMode>,
 );

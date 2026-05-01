@@ -16,7 +16,7 @@ function pickQuantity(order: Order): number {
 
 export function ShippedSidebar({ selectedId, onSelect }: Props) {
   const [query, setQuery] = useState('');
-  // Server-side filter — the mock and Zoho impls both honour `search`. We
+  // Server-side filter - the mock and Zoho impls both honour `search`. We
   // pass the trimmed query through; no client-side pre-filter needed.
   const trimmed = query.trim();
   const { data: orders, isLoading } = useShippedOrders(trimmed || undefined);

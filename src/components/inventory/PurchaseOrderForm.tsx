@@ -16,7 +16,7 @@ interface Props {
  * Submitting is a two-stage flow: the first click validates the input and
  * flips the form into a confirm state; the second click on "Bevestigen"
  * actually registers the PO. Editing any field while confirming drops back
- * to the default state — we don't want users tweaking values while staring
+ * to the default state - we don't want users tweaking values while staring
  * at a "Weet je zeker?" prompt.
  */
 export function PurchaseOrderForm({ productId, productName }: Props) {
@@ -65,7 +65,7 @@ export function PurchaseOrderForm({ productId, productName }: Props) {
 
   const busy = register.isPending;
 
-  // Editing a field while confirming is confusing — drop back to default
+  // Editing a field while confirming is confusing - drop back to default
   // state so the confirm prompt always reflects the current input.
   const handleQtyChange = (value: string) => {
     setQty(value);

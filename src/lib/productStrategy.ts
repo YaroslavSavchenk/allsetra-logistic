@@ -2,7 +2,7 @@ import type { Product, ProductCategory } from '@/types/product';
 
 /**
  * The product strategy registry is the single source of truth for what
- * products exist and how they behave. Today it's a static list — the Zoho
+ * products exist and how they behave. Today it's a static list - the Zoho
  * Products module will replace this seed with a fetched + cached list, but
  * the rest of the app keeps talking through the same lookup helpers.
  *
@@ -345,7 +345,7 @@ export function normaliseCategory(raw: string): ProductCategory {
 /**
  * Resolve a raw IMEI to the product id whose prefix it matches. Returns
  * `null` for non-numeric strings or unknown prefixes. Does not check IMEI
- * length — call sites that need the full validation use `validateImei`.
+ * length - call sites that need the full validation use `validateImei`.
  */
 export function detectProductFromImei(imei: string): string | null {
   if (!/^\d+$/.test(imei)) return null;

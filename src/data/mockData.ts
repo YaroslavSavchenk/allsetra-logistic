@@ -42,7 +42,7 @@ export const MOCK_ORDERS: Order[] = [
         id: 'n_snn_1',
         author: 'Pieter Bakker',
         content:
-          'Klant belt donderdag voor bevestiging verzenddatum — nummer staat in Zoho.',
+          'Klant belt donderdag voor bevestiging verzenddatum - nummer staat in Zoho.',
         createdAt: '2026-04-22T15:10:00',
         modifiedAt: null,
       },
@@ -125,7 +125,7 @@ export const MOCK_ORDERS: Order[] = [
     orderNumber: 'RCO-0046',
     account: 'Taxi Maastricht Centraal',
     address:
-      'Installatiebedrijf Heuvelland — Limburgstraat 88 (afwijkend verzendadres)',
+      'Installatiebedrijf Heuvelland - Limburgstraat 88 (afwijkend verzendadres)',
     postcode: '6211 LK',
     city: 'Maastricht',
     status: 'In behandeling',
@@ -153,7 +153,7 @@ export const MOCK_ORDERS: Order[] = [
       { id: 'u3', imei: '', productId: 'rc-eco5' },
     ],
   },
-  // Non-RouteConnect family — IMEI-loze producten doorlopen de orderpick
+  // Non-RouteConnect family - IMEI-loze producten doorlopen de orderpick
   // zonder Units en worden bij verzending alleen op aantal afgeschreven.
   {
     id: 'zcrm_006',
@@ -172,7 +172,7 @@ export const MOCK_ORDERS: Order[] = [
         id: 'n_sva_1',
         author: 'Sanne Visser',
         content:
-          'Verhuurseizoen begint volgende week — graag deze week nog versturen.',
+          'Verhuurseizoen begint volgende week - graag deze week nog versturen.',
         createdAt: '2026-04-24T10:32:00',
         modifiedAt: null,
       },
@@ -184,7 +184,7 @@ export const MOCK_ORDERS: Order[] = [
     units: [],
   },
   // ---------------------------------------------------------------------
-  // Verstuurde orders — voeden de Verzonden-tab bij eerste start. Mengsel
+  // Verstuurde orders - voeden de Verzonden-tab bij eerste start. Mengsel
   // van pure tracker, tracker + accessoires, en IMEI-loze (fietsbeveiliging)
   // zodat alle pakbon-edge-cases zichtbaar zijn.
   // ---------------------------------------------------------------------
@@ -270,7 +270,7 @@ export const MOCK_ORDERS: Order[] = [
   {
     id: 'lco_a1b2c3',
     orderNumber: 'LCO-0001',
-    account: 'Interne handover — Allsetra Demo team',
+    account: 'Interne handover - Allsetra Demo team',
     address: 'Hoofdkantoor Allsetra, balie 1e etage',
     postcode: '8331 LJ',
     city: 'Steenwijk',
@@ -283,7 +283,7 @@ export const MOCK_ORDERS: Order[] = [
       {
         id: 'n_lco_1',
         author: 'Logistiek',
-        content: 'Demo set t.b.v. salesdemo donderdag — retour eind volgende week.',
+        content: 'Demo set t.b.v. salesdemo donderdag - retour eind volgende week.',
         createdAt: '2026-04-28T13:01:00',
         modifiedAt: null,
       },

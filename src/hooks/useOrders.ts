@@ -111,7 +111,7 @@ export function useShipOrder() {
       // could in theory carry the same productId on multiple orderpick rows)
       // and reject the entire ship if any product can't cover its total
       // demand. We do this BEFORE markAsShipped so a failed check leaves
-      // the order untouched — no half-shipped state, no rollback needed.
+      // the order untouched - no half-shipped state, no rollback needed.
       // Empty picks array short-circuits: nothing to check, fall through to
       // the existing service no-op.
       if (picks.length > 0) {

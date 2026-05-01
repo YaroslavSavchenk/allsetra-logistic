@@ -16,13 +16,13 @@ interface Props {
 /**
  * Lists open purchase-order *lines* for the given product. A multi-product
  * PO surfaces here as one row per product line, and "Ontvangen" only
- * receives that line — sister products on the same PO stay open until
+ * receives that line - sister products on the same PO stay open until
  * separately ticked off, so the user no longer accidentally receives
  * unrelated stock.
  *
  * The trash icon next to "Ontvangen" wipes the entire PO (all lines,
  * including any sister products on the same PO). Logistics gets an inline
- * confirm bar before the destructive call goes through — no modals, no
+ * confirm bar before the destructive call goes through - no modals, no
  * native dialogs.
  */
 export function OpenPurchaseOrders({ productId }: Props) {
@@ -123,7 +123,7 @@ export function OpenPurchaseOrders({ productId }: Props) {
                 )}
                 Ontvangen
               </button>
-              {/* Trash is beheer-only — wiping a PO is destructive and there
+              {/* Trash is beheer-only - wiping a PO is destructive and there
                   is no undo, so logistiek can receive but not delete. */}
               {isBeheer && (
                 <button

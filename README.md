@@ -6,16 +6,16 @@ Smart5) en doet inmiddels alle logistiek: tracker-orders met IMEI's, plus
 productlijnen zonder IMEI (accessoires, fietsbeveiliging, sensors). Vier
 tabs bovenaan: **Orders** (klantorders prepen + versturen, óf zelf een
 order aanmaken voor ad-hoc verzendingen), **Verzonden** (alle verstuurde
-orders met pakbon-PDF — openen, printen, downloaden), **Voorraad** (per
+orders met pakbon-PDF - openen, printen, downloaden), **Voorraad** (per
 product de stand, openstaande inkooporders en mutatiehistorie) en
 **Instellingen** (thema-keuze, profielwissel, app-info).
 
 Twee orderstromen:
 
-- **Sales-orders** komen uit Zoho CRM — sales maakt de quote, logistiek ziet
+- **Sales-orders** komen uit Zoho CRM - sales maakt de quote, logistiek ziet
   de open orders zodra ze status `Nieuw` hebben.
 - **Logistiek-orders** maakt het team zelf via "**+ Nieuwe order**" in de
-  Orders-sidebar — voor verzendingen zonder sales-quote (interne overdracht,
+  Orders-sidebar - voor verzendingen zonder sales-quote (interne overdracht,
   spoed, alleen accessoires). Krijgen een `LCO-…` nummer en lopen daarna
   precies dezelfde flow als sales-orders.
 
@@ -23,7 +23,7 @@ De productlijst voor de picker komt uit de Zoho Products module (live mode)
 of uit de lokale productregistratie (mock mode); de UI is hetzelfde.
 
 > **Status: prototype.** De app draait op mock data. De Zoho CRM-integratie
-> (orders) komt in een volgende fase — de servicelaag is er al op ingericht.
+> (orders) komt in een volgende fase - de servicelaag is er al op ingericht.
 > De voorraadkant heeft geen Zoho-tegenhanger op dit moment; alleen mock.
 
 ## Stack
@@ -44,7 +44,7 @@ of uit de lokale productregistratie (mock mode); de UI is hetzelfde.
 
 - Installer is ~5 MB i.p.v. ~150 MB (Tauri gebruikt de al aanwezige
   Windows WebView2, Electron bundelt Chromium).
-- Rust backend heeft een kleiner aanvalsoppervlak — belangrijk omdat hier
+- Rust backend heeft een kleiner aanvalsoppervlak - belangrijk omdat hier
   straks de Zoho Client Secret & Refresh Token leven.
 - Opstarttijd en RAM-gebruik zijn significant lager.
 
@@ -63,17 +63,17 @@ Eén download en je bent klaar:
 1. Ga naar de [Releases pagina](https://github.com/YaroslavSavchenk/allsetra-logistic/releases)
 2. Download de laatste `.msi` of `.exe`
 3. Dubbelklik, installeer, en kies bij de eerste start je profiel
-   (logistiek of beheer) — geen wachtwoord, geen configuratie
+   (logistiek of beheer) - geen wachtwoord, geen configuratie
 4. Daarna **updatet de app zichzelf automatisch**: bij elke start wordt
    gecheckt of er een nieuwere versie is; als dat zo is verschijnt
    rechtsonder een notificatie met "Nu updaten" / "Later"
 
 Onder **Instellingen** kun je het thema (donker/licht/systeem) wisselen
 en op een ander profiel overstappen. Beheer-rollen kunnen daarnaast
-voorraad handmatig aanpassen en inkooporders verwijderen — voor
+voorraad handmatig aanpassen en inkooporders verwijderen - voor
 logistiek staat dat uit.
 
-Eventuele secrets (Zoho API sleutels straks) zijn nooit zichtbaar — ze zitten
+Eventuele secrets (Zoho API sleutels straks) zijn nooit zichtbaar - ze zitten
 óf gecompileerd in de Rust-binary (niet leesbaar als tekst), óf in de
 Windows Credential Manager, óf worden pas per installatie via een inlog
 aangemaakt. **Geen `.env` bestand op de werkstations.**
@@ -98,12 +98,12 @@ Dat triggert `.github/workflows/release.yml`:
 Zodra de release gepubliceerd is (promote de draft), zien ALLE geïnstalleerde
 apps binnen een paar minuten de update.
 
-Lokaal bouwen zonder CI kan ook — zie "Zelf bouwen" hieronder.
+Lokaal bouwen zonder CI kan ook - zie "Zelf bouwen" hieronder.
 
 ## Vereisten (alleen voor ontwikkelen)
 
-- **Node.js 18+** — voor de frontend
-- **Rust 1.77+ (stable)** — voor de Tauri Rust backend.
+- **Node.js 18+** - voor de frontend
+- **Rust 1.77+ (stable)** - voor de Tauri Rust backend.
   Install: [rustup.rs](https://rustup.rs)
 - **Platform libs**:
   - **Windows**: WebView2 runtime (standaard aanwezig op Windows 11; op
@@ -133,7 +133,7 @@ npm run typecheck    # alleen TypeScript check
 npm run tauri:dev    # native venster met HMR
 ```
 
-De allereerste `tauri:dev` compileert de hele Rust dependency tree — neem
+De allereerste `tauri:dev` compileert de hele Rust dependency tree - neem
 5-10 min de tijd. Daaropvolgende runs zijn incrementeel. Werkt op Windows uit
 de doos; op WSL/Linux eerst de platform libs installeren (zie Vereisten).
 
@@ -158,7 +158,7 @@ Producten landen in `src-tauri/target/release/bundle/`:
 
 **macOS / Linux**: hetzelfde commando, maar produceert .dmg / .deb / .AppImage.
 Let op: `tauri:build` bouwt alleen voor het **huidige platform**. Voor een
-Windows installer gebruik je Windows of de GitHub Actions workflow — niet
+Windows installer gebruik je Windows of de GitHub Actions workflow - niet
 WSL/Linux.
 
 ## Projectstructuur
@@ -178,7 +178,7 @@ src/                          Frontend (React + TS)
 │   ├── format.ts             Datum/tijd formatter (nl-NL)
 │   └── relativeDate.ts       Relatieve datum (vandaag/gisteren/N dagen geleden)
 ├── config/
-│   └── company.ts            COMPANY_INFO — placeholder pakbon-bedrijfsgegevens
+│   └── company.ts            COMPANY_INFO - placeholder pakbon-bedrijfsgegevens
 ├── services/
 │   ├── orderService.ts       OrderService interface (incl. createOrder +
 │   │                         listShippedOrders/getShippedOrder)
@@ -187,7 +187,7 @@ src/                          Frontend (React + TS)
 │   ├── inventoryService.ts   InventoryService interface (incl. listProducts)
 │   ├── mockInventoryService.ts
 │   ├── zohoCatalogService.ts Live productlijst uit Zoho Products module
-│   └── index.ts              Façade — kiest mock of live per service
+│   └── index.ts              Façade - kiest mock of live per service
 ├── hooks/
 │   ├── useOrders.ts          Orders + composeert deductForShipment in useShipOrder
 │   │                         + useShippedOrders/useShippedOrder
@@ -199,7 +199,7 @@ src/                          Frontend (React + TS)
 │   ├── UpdatePrompt.tsx
 │   ├── orders/               OrdersTab + Sidebar, OrderWorkspace,
 │   │                         NewOrderForm, …
-│   ├── shipped/              Verzonden tab — ShippedTab, ShippedSidebar,
+│   ├── shipped/              Verzonden tab - ShippedTab, ShippedSidebar,
 │   │                         ShippedWorkspace (read-only + pakbon-knop)
 │   ├── waybill/              Pakbon: buildWaybillHtml (HTML-generator),
 │   │                         WaybillViewer (modal met iframe-preview +
@@ -237,16 +237,16 @@ scripts/
 - Het gedetecteerde product moet matchen met het verwachte product van de unit.
 - IMEI's mogen niet dubbel voorkomen binnen dezelfde order.
 - Producten zonder IMEI (accessoires, fietsbeveiliging, sensors) staan wel
-  in `orderpick` maar hebben geen Units — er is geen IMEI-invoer voor.
+  in `orderpick` maar hebben geen Units - er is geen IMEI-invoer voor.
 - **Drie-stappen flow** in de Orders-tab: (1) IMEI scannen, (2) Inpakken
-  (opent pakbon — verplicht voordat de Versturen-knop verschijnt), (3)
+  (opent pakbon - verplicht voordat de Versturen-knop verschijnt), (3)
   Versturen. Voor orders zonder IMEI-producten begint de flow direct bij
   stap 2.
 - Een open order schuift automatisch naar `In behandeling` zodra er een IMEI
   wordt ingevuld; naar `Verstuurd` na een succesvolle versturen-actie. Hij
   verdwijnt uit de Orders-lijst en verschijnt boven in de Verzonden-tab,
   inclusief direct bruikbare pakbon-knop.
-- Direct na verzending verschijnt nóg een toast met **Pakbon openen** —
+- Direct na verzending verschijnt nóg een toast met **Pakbon openen** -
   vangnet voor het geval logistiek bij de inpakken-stap niet heeft geprint.
 - Bij versturen doet de app eerst een pre-flight voorraadcheck. Als één
   of meer producten uit `orderpick` te weinig `opVoorraad` hebben, wordt
@@ -269,15 +269,15 @@ producten met IMEI ook een lijst prefixes voor automatische detectie.
 componenten resolven namen via `getProduct(id)` / `getProductName(id)`, dus
 verder hoeft er niets aangepast.
 
-**Nieuwe IMEI-tracker familie**: zelfde — definieer het product met
+**Nieuwe IMEI-tracker familie**: zelfde - definieer het product met
 `hasIMEI: true` en de prefixes. De validator herkent het direct.
 
 ## Mock data
 
 Twee bestanden, één per domein:
 
-- [`src/data/mockData.ts`](./src/data/mockData.ts) — sample klantorders
-- [`src/data/mockInventory.ts`](./src/data/mockInventory.ts) — voorraad +
+- [`src/data/mockData.ts`](./src/data/mockData.ts) - sample klantorders
+- [`src/data/mockInventory.ts`](./src/data/mockInventory.ts) - voorraad +
   open inkooporders
 
 Beide refereren producten alleen via hun `id` uit `productStrategy.ts`.
@@ -290,7 +290,7 @@ Beide refereren producten alleen via hun `id` uit `productStrategy.ts`.
 - `units[i].productId` is het verwachte product van die unit.
 - `status` is `'Nieuw'` voor nieuwe orders, `'In behandeling'` voor deels
   ingevulde orders.
-- `createdAt` als ISO string — oudste orders staan bovenaan in de sidebar.
+- `createdAt` als ISO string - oudste orders staan bovenaan in de sidebar.
 
 **Nieuwe voorraad-rij** (`mockInventory.ts`): één entry per `productId` met
 `opVoorraad`, `opBestelling`, `lastMovementAt`. Open `MOCK_PURCHASE_ORDERS`
@@ -304,36 +304,36 @@ de Verzonden-sidebar verschijnen op verzenddatum.
 
 ## Pakbon
 
-Elke order heeft een **pakbon** — A4-portrait HTML-document, gegenereerd
+Elke order heeft een **pakbon** - A4-portrait HTML-document, gegenereerd
 uit de live order-data via [`buildWaybillHtml`](./src/components/waybill/buildWaybillHtml.ts).
 Geen PDF-library, geen archief: Zoho is bron van waarheid en de pakbon
 wordt elke keer opnieuw opgebouwd. Eén template voor alle productlijnen.
 
 De viewer toont de pakbon in een iframe (zelfde HTML als wat geprint
-wordt — WYSIWYG). Twee acties:
+wordt - WYSIWYG). Twee acties:
 
 - **Sluiten**
-- **Printen / opslaan als PDF** — opent de OS-print dialoog. Voor PDF
+- **Printen / opslaan als PDF** - opent de OS-print dialoog. Voor PDF
   kies je "Microsoft Print to PDF" in het printvenster.
 
 De viewer wordt op drie plekken aangeroepen:
 
-1. **Inpakken-stap** in de Orders-tab — verplichte stap tussen IMEI
+1. **Inpakken-stap** in de Orders-tab - verplichte stap tussen IMEI
    scannen en Versturen. Logistiek opent de pakbon, controleert/print, en
    pakt de doos in. Pas dan komt de Versturen-knop beschikbaar.
 2. **Verzonden-tab** workspace via "Pakbon openen" voor reeds verzonden
    orders.
-3. Als toast-actie direct ná versturen — vangnet voor het geval logistiek
+3. Als toast-actie direct ná versturen - vangnet voor het geval logistiek
    bij stap 1 niet heeft geprint.
 
 Edge cases (lege units, lege accessoires, ontbrekende velden) crashen
-niet maar tonen "—" of slaan de sectie over. Alle dynamische velden
+niet maar tonen "-" of slaan de sectie over. Alle dynamische velden
 worden HTML-escaped, dus een Zoho-notitie met `<script>` of `&` breekt
 het document niet.
 
 **Bedrijfsgegevens** (naam, adres, KvK, BTW, eventueel logo) staan in
 [`src/config/company.ts`](./src/config/company.ts) als `COMPANY_INFO`
-constant. **Placeholder-waarden — vervang vóór productie.** Geen
+constant. **Placeholder-waarden - vervang vóór productie.** Geen
 runtime-config, geen instellingenscherm; deze waarden worden in de binary
 gecompileerd. Een logo activeer je door `src/assets/logo.png` toe te
 voegen en het `logoPath` veld in `COMPANY_INFO` te zetten.
@@ -342,12 +342,12 @@ voegen en het `logoPath` veld in `COMPANY_INFO` te zetten.
 
 Linker zijde van de Orders-tab heeft een **+ Nieuwe order** knop. Form-velden:
 
-- **Ontvanger** (verplicht) — vrije tekst: persoon, team of bedrijf.
-- **Verzendadres** (verplicht) — straat + huisnummer, postcode, stad.
-- **Producten** — minstens één regel via de productpicker (typen filtert op
+- **Ontvanger** (verplicht) - vrije tekst: persoon, team of bedrijf.
+- **Verzendadres** (verplicht) - straat + huisnummer, postcode, stad.
+- **Producten** - minstens één regel via de productpicker (typen filtert op
   naam of SKU; pijltjes navigeren, Enter selecteert). Per regel: aantal en
   optionele regel-notitie.
-- **Interne notitie** (optioneel) — wordt aan de order gehangen als
+- **Interne notitie** (optioneel) - wordt aan de order gehangen als
   `OrderNote` met auteur "Logistiek".
 
 Resultaat: een order met `source: 'logistics'`, ordernummer `LCO-NNNN`,
@@ -357,29 +357,29 @@ opent meteen de standaard order-workspace om IMEI's te scannen of direct
 te versturen.
 
 > **Zoho-push:** logistiek-orders worden vandaag **niet** naar Zoho
-> gestuurd — de live-mode `createOrder` faalt expliciet met een NL-melding.
+> gestuurd - de live-mode `createOrder` faalt expliciet met een NL-melding.
 > Dat is een business-keuze die nog gemaakt moet worden voordat live mode
 > aan kan.
 
 ## Zoho integratie
 
-De Rust-kant van Tauri praat direct met Zoho CRM — geen losse backend. De
+De Rust-kant van Tauri praat direct met Zoho CRM - geen losse backend. De
 frontend roept Tauri commands aan via `@tauri-apps/api`; de `OrderService`
 façade in `src/services/index.ts` switcht automatisch tussen mock en live op
 basis van of de Rust binary met Zoho secrets gecompileerd is.
 
 ```
 src-tauri/src/zoho/
-├── config.rs     — env-baked constants, module/field name mappings
-├── error.rs       — ZohoError (Serializable naar JS via IPC)
-├── models.rs      — Order/Unit/OrderNote (camelCase JSON → TS types)
-├── client.rs      — HTTP + OAuth refresh flow + 1h token cache + retry op 401
-├── mapper.rs      — Zoho JSON → Order (defensief: onbekende velden = leeg)
-└── commands.rs    — 5 #[tauri::command]: is_configured, fetch_open_orders,
+├── config.rs     - env-baked constants, module/field name mappings
+├── error.rs       - ZohoError (Serializable naar JS via IPC)
+├── models.rs      - Order/Unit/OrderNote (camelCase JSON → TS types)
+├── client.rs      - HTTP + OAuth refresh flow + 1h token cache + retry op 401
+├── mapper.rs      - Zoho JSON → Order (defensief: onbekende velden = leeg)
+└── commands.rs    - 5 #[tauri::command]: is_configured, fetch_open_orders,
                     fetch_order (met notes), update_units, ship_order
 ```
 
-### Stap 1 — Zoho Self Client aanmaken
+### Stap 1 - Zoho Self Client aanmaken
 
 1. Login op https://api-console.zoho.eu als Zoho admin
 2. "Add Client" → "Self Client" → kopieer **Client ID** en **Client Secret**
@@ -397,21 +397,21 @@ src-tauri/src/zoho/
      -d "code=<grant code>" \
      -d "redirect_uri=https://accounts.zoho.eu"
    ```
-5. Bewaar de **refresh_token** uit de response — die is forever geldig.
+5. Bewaar de **refresh_token** uit de response - die is forever geldig.
 
-### Stap 2 — Secrets uploaden naar GitHub
+### Stap 2 - Secrets uploaden naar GitHub
 
 ```bash
 echo -n "<client_id>"     | gh secret set ZOHO_CLIENT_ID
 echo -n "<client_secret>" | gh secret set ZOHO_CLIENT_SECRET
 echo -n "<refresh_token>" | gh secret set ZOHO_REFRESH_TOKEN
 
-# Optioneel — de defaults gaan uit van EU sandbox + module "RouteConnectOrders_test"
+# Optioneel - de defaults gaan uit van EU sandbox + module "RouteConnectOrders_test"
 echo -n "https://www.zohoapis.eu"        | gh secret set ZOHO_API_BASE        # voor prod
 echo -n "<jouw_module_api_naam>"          | gh secret set ZOHO_MODULE
 ```
 
-### Stap 3 — Field-namen bevestigen
+### Stap 3 - Field-namen bevestigen
 
 De field API-namen in `src-tauri/src/zoho/config.rs` zijn **gokken uit het
 project plan**. Haal één bestaande order op om ze te verifiëren:
@@ -430,20 +430,20 @@ curl -s -H "Authorization: Zoho-oauthtoken $ACCESS_TOKEN" \
 Vergelijk de JSON keys met de `FIELD_*` constants in `config.rs`. Pas aan
 waar nodig.
 
-### Stap 4 — Tag en bouw
+### Stap 4 - Tag en bouw
 
 ```bash
 git tag v0.2.0 && git push origin v0.2.0
 ```
 
-CI bakt de secrets als compile-time env vars de Rust binary in — ze zitten
+CI bakt de secrets als compile-time env vars de Rust binary in - ze zitten
 niet als string in het frontend bundle. Geïnstalleerde apps zien binnen
 ~30 min de update via de auto-updater.
 
 ### Runtime gedrag
 
 - **Lijst ophalen**: `zoho_fetch_open_orders` doet één search-call met
-  criterium `(Status:equals:Nieuw) OR (Status:equals:In behandeling)` — dus
+  criterium `(Status:equals:Nieuw) OR (Status:equals:In behandeling)` - dus
   zonder vooraf ingerichte Custom View nodig.
 - **Order detail**: `zoho_fetch_order` fetcht tegelijk de order EN z'n notes
   (parallel `tokio::join!`); de app poll dit elke 30s zolang de order
@@ -468,7 +468,7 @@ gezet zijn:
 Zoho-specifieke details (EU datacenter, OAuth Self Client flow,
 subformulier-valkuilen) staan in het oorspronkelijke project plan.
 
-## Auto-update — hoe het werkt
+## Auto-update - hoe het werkt
 
 - Bij opstart doet de app een `check()` tegen de GitHub Releases update
   manifest (`latest.json`).
@@ -479,16 +479,16 @@ subformulier-valkuilen) staan in het oorspronkelijke project plan.
 - De gebruiker klikt "Herstarten" en is op de nieuwe versie.
 
 De public key zit vast in elke installer. Een aanvaller kan geen valse update
-injecteren — elke update moet met de overeenkomende private key (alleen in
+injecteren - elke update moet met de overeenkomende private key (alleen in
 GitHub Secrets) gesigneerd zijn.
 
 ### Signing keys
 
 - **Public key**: staat in `src-tauri/tauri.conf.json` onder
-  `plugins.updater.pubkey` — veilig te committen
-- **Private key**: GitHub Secret `TAURI_SIGNING_PRIVATE_KEY` — **nooit
+  `plugins.updater.pubkey` - veilig te committen
+- **Private key**: GitHub Secret `TAURI_SIGNING_PRIVATE_KEY` - **nooit
   committen**. Lokale backup in `~/.tauri-keys/routeconnect` (houd dit veilig,
-  bijv. in 1Password/Bitwarden — als je het kwijtraakt kunnen geïnstalleerde
+  bijv. in 1Password/Bitwarden - als je het kwijtraakt kunnen geïnstalleerde
   apps geen updates meer accepteren en moet iedereen opnieuw installeren).
 - Genereren/roteren:
   ```bash
@@ -501,19 +501,19 @@ GitHub Secrets) gesigneerd zijn.
 
 ## Bekende beperkingen
 
-- Mock services (orders + voorraad) draaien in-memory — een reload reset
+- Mock services (orders + voorraad) draaien in-memory - een reload reset
   alle voorraadmutaties, ontvangen inkooporders en orderstatus. Opzettelijk
   voor het prototype; de echte backend zal persistent zijn.
-- Voorraad heeft nog géén Zoho-tegenhanger — de façade pakt altijd de mock
+- Voorraad heeft nog géén Zoho-tegenhanger - de façade pakt altijd de mock
   inventory service. De order-kant switcht wel automatisch naar Zoho als de
   binary met secrets is gebouwd.
-- Geen authenticatie in de app zelf — aangenomen wordt dat de workstation
+- Geen authenticatie in de app zelf - aangenomen wordt dat de workstation
   vertrouwd is.
 - Alleen desktop layout (geen mobile breakpoints).
 - Geen automatische test suite buiten het IMEI-regressie script.
 - IMEI input strippt non-digits automatisch; "alleen cijfers"-foutmelding is
   daardoor in de praktijk moeilijk te triggeren vanuit de UI.
-- `tauri:build` produceert alleen de installer voor het huidige platform —
+- `tauri:build` produceert alleen de installer voor het huidige platform -
   voor Windows `.msi` bouw je op Windows of via de CI workflow.
 - Auto-update vereist internet bij opstart. Bij offline werkstation blijft de
   app gewoon werken op de geïnstalleerde versie.

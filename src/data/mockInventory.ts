@@ -4,7 +4,7 @@ import type { InventoryItem, PurchaseOrder } from '@/types/inventory';
  * Realistic seed numbers across the whole product catalogue. Mock dates are
  * kept in 2026-04 so they read consistently next to `mockData.ts`.
  *
- * Single source of mock state — the Zoho swap replaces only this file plus
+ * Single source of mock state - the Zoho swap replaces only this file plus
  * the `MockInventoryService` implementation that consumes it.
  */
 export const MOCK_INVENTORY: InventoryItem[] = [

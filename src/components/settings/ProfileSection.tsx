@@ -4,7 +4,7 @@ import { RoleBadge } from './RoleBadge';
 
 /**
  * Section that surfaces the active profile + a "wissel profiel" button.
- * Clearing the active user pops the picker back over the app — no full
+ * Clearing the active user pops the picker back over the app - no full
  * page reload, no React Query cache flush.
  */
 export function ProfileSection() {

@@ -3,7 +3,7 @@
  *
  * The inventory module tracks physical stock for every product known to the
  * product strategy registry. There is one `InventoryItem` per product. The
- * service computes nothing — derived values like "totaal verwacht" are kept
+ * service computes nothing - derived values like "totaal verwacht" are kept
  * in the UI so persistence stays close to the underlying numbers.
  *
  * Three event sources mutate stock:

@@ -82,7 +82,7 @@ export function TopNav<Id extends string>({
         {mode === 'mock' && (
           <span
             className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-300"
-            title="De app draait op lokale demo data — geen verbinding met Zoho. Wijzigingen verdwijnen na een reload."
+            title="De app draait op lokale demo data - geen verbinding met Zoho. Wijzigingen verdwijnen na een reload."
           >
             <FlaskConical className="h-3 w-3" />
             Mock data

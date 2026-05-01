@@ -1,9 +1,9 @@
 /**
- * Placeholder bedrijfsgegevens — vervang vóór productie. Compiled into the
+ * Placeholder bedrijfsgegevens - vervang vóór productie. Compiled into the
  * binary; geen runtime-config.
  *
  * The pakbon (waybill) template reads these values verbatim. Update before
- * shipping the first real installer — there is no UI to change them.
+ * shipping the first real installer - there is no UI to change them.
  *
  * `logoPath` is intentionally omitted in the placeholder. When ready, drop
  * `logo.png` in `src/assets/` and set `logoPath: '/logo.png'` (or a public

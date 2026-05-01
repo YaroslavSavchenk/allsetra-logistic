@@ -18,7 +18,7 @@ import { USERS, type UserProfile, type UserRole } from '@/config/users';
  * (or the persisted id no longer maps to a known USERS entry). The app
  * shell uses this null-state to render the first-run profile picker.
  *
- * NOTE: This is not authentication. It's identity tagging — the OS
+ * NOTE: This is not authentication. It's identity tagging - the OS
  * already authenticated the user. We could just as well call this
  * "active operator". The role enables UI gating; nothing more.
  */
@@ -55,12 +55,12 @@ export function CurrentUserProvider({ children }: ProviderProps) {
 
   // Keep localStorage in sync. Wrapping localStorage reads/writes in
   // try/catch lets the app still function in private/sandboxed contexts
-  // where localStorage throws — the picker just reappears every reload.
+  // where localStorage throws - the picker just reappears every reload.
   const setCurrentUser = useCallback((user: UserProfile) => {
     try {
       localStorage.setItem(STORAGE_KEY, user.id);
     } catch {
-      // ignore — non-fatal
+      // ignore - non-fatal
     }
     setCurrentUserState(user);
   }, []);
@@ -69,7 +69,7 @@ export function CurrentUserProvider({ children }: ProviderProps) {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
-      // ignore — non-fatal
+      // ignore - non-fatal
     }
     setCurrentUserState(null);
   }, []);
@@ -103,7 +103,7 @@ export function CurrentUserProvider({ children }: ProviderProps) {
 
 /**
  * Returns the active user. **Must** be called from inside the protected
- * app shell — i.e. anywhere downstream of the picker gate. Outside the
+ * app shell - i.e. anywhere downstream of the picker gate. Outside the
  * gate, the user is `null` and components shouldn't be reaching for it.
  */
 export function useCurrentUser(): UserProfile {
@@ -115,7 +115,7 @@ export function useCurrentUser(): UserProfile {
   }
   if (!ctx.currentUser) {
     throw new Error(
-      'useCurrentUser called before a profile was picked — render <ProfilePicker /> first',
+      'useCurrentUser called before a profile was picked - render <ProfilePicker /> first',
     );
   }
   return ctx.currentUser;

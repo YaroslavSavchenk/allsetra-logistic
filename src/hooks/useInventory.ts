@@ -25,7 +25,7 @@ export function useInventory() {
 
 /**
  * Full product catalogue, sourced from Zoho when configured and from the
- * local registry otherwise. Cached aggressively — products don't change
+ * local registry otherwise. Cached aggressively - products don't change
  * often, so we don't refetch on focus and keep stale data fresh for an hour.
  */
 export function useCatalog() {
@@ -129,7 +129,7 @@ export function useAdjustStock() {
 
 /**
  * Mutation hook for shipment-driven stock deductions. Exported here so the
- * order-shipping flow can compose it later — not yet wired in by this step.
+ * order-shipping flow can compose it later - not yet wired in by this step.
  */
 export function useDeductForShipment() {
   const qc = useQueryClient();

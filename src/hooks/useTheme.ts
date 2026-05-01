@@ -8,7 +8,7 @@ export type ThemeChoice = 'system' | 'light' | 'dark';
 
 /**
  * What's actually applied to <html data-theme>. Always concrete, never
- * `'system'` — components that want to render-condition on the active
+ * `'system'` - components that want to render-condition on the active
  * palette read this.
  */
 export type ResolvedTheme = 'light' | 'dark';
@@ -25,7 +25,7 @@ function readStoredChoice(): ThemeChoice {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v === 'light' || v === 'dark' || v === 'system') return v;
   } catch {
-    // localStorage may throw in private/sandboxed contexts — fall through.
+    // localStorage may throw in private/sandboxed contexts - fall through.
   }
   return 'system';
 }
@@ -86,7 +86,7 @@ export function useTheme() {
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // Same fallthrough — we still update React state so the UI feels
+      // Same fallthrough - we still update React state so the UI feels
       // responsive even when persistence is unavailable.
     }
     setThemeState(next);

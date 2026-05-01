@@ -281,7 +281,7 @@ export function NewOrderForm({ onCreated, onCancel }: Props) {
           <SectionHeader icon={StickyNote} title="Interne notitie (optioneel)" />
           <textarea
             rows={2}
-            placeholder="Voor logistiek zelf — verschijnt op de order als notitie."
+            placeholder="Voor logistiek zelf - verschijnt op de order als notitie."
             value={note}
             onChange={(e) => setNote(e.target.value)}
             disabled={busy}

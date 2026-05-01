@@ -5,7 +5,7 @@ import { ShippedSidebar } from './ShippedSidebar';
 import { ShippedWorkspace } from './ShippedWorkspace';
 
 export function ShippedTab() {
-  // Same fetch as the sidebar, no-search variant — used purely so we can
+  // Same fetch as the sidebar, no-search variant - used purely so we can
   // auto-select the first shipped order when the tab loads. React Query
   // dedupes the request because the sidebar uses the same key for an empty
   // search.

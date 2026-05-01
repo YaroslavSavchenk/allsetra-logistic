@@ -1,5 +1,5 @@
 /**
- * A Product is anything logistics can ship — trackers, accessories, and
+ * A Product is anything logistics can ship - trackers, accessories, and
  * non-RouteConnect product lines alike. The product master is the single
  * point of truth for what's shippable; orders, units and inventory all
  * reference products by id.

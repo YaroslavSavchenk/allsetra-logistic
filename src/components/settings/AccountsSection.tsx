@@ -7,7 +7,7 @@ import {
 import { RoleBadge } from './RoleBadge';
 
 /**
- * List of every defined profile. Beheer-only — logistiek users see a
+ * List of every defined profile. Beheer-only - logistiek users see a
  * locked placeholder that explains the gating without exposing edit UI
  * (which doesn't exist anyway: profile lists are code-only).
  */

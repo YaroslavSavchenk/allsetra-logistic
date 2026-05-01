@@ -12,7 +12,7 @@ interface Props {
 /**
  * Modal wrapper around the pakbon. Renders the document as styled HTML
  * inside an iframe via `srcDoc`, which works under Tauri's strict CSP
- * (no `blob:` URLs, no script). The same iframe is what gets printed —
+ * (no `blob:` URLs, no script). The same iframe is what gets printed -
  * what you see is what you print.
  *
  * Saving as PDF: Windows ships "Microsoft Print to PDF" by default, so
@@ -23,10 +23,10 @@ export function WaybillViewer({ order, isOpen, onClose }: Props) {
 
   // Build the HTML once per modal open. The order object identity is stable
   // across the modal lifetime (it's the React Query cache entry), so a
-  // dependency on `order` itself is enough — no per-render rebuilds.
+  // dependency on `order` itself is enough - no per-render rebuilds.
   const html = useMemo(() => buildWaybillHtml(order), [order]);
 
-  // Escape closes the modal — non-intrusive, matches OS expectations.
+  // Escape closes the modal - non-intrusive, matches OS expectations.
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -70,7 +70,7 @@ export function WaybillViewer({ order, isOpen, onClose }: Props) {
         {/* Header */}
         <header className="flex items-center justify-between border-b border-surface-700 bg-surface-850 px-5 py-3">
           <h2 className="text-sm font-semibold text-slate-100">
-            Pakbon —{' '}
+            Pakbon -{' '}
             <span className="font-mono text-accent">{order.orderNumber}</span>
           </h2>
           <button
@@ -83,7 +83,7 @@ export function WaybillViewer({ order, isOpen, onClose }: Props) {
           </button>
         </header>
 
-        {/* Body — neutral dark gray frame around a white A4 iframe so the
+        {/* Body - neutral dark gray frame around a white A4 iframe so the
             page preview reads as a sheet of paper. */}
         <div className="flex flex-1 items-stretch overflow-hidden bg-surface-950 p-4">
           <iframe
@@ -91,7 +91,7 @@ export function WaybillViewer({ order, isOpen, onClose }: Props) {
             srcDoc={html}
             title={`Pakbon ${order.orderNumber}`}
             className="h-full w-full rounded border border-surface-700 bg-white"
-            // sandbox intentionally omitted — we control the document content
+            // sandbox intentionally omitted - we control the document content
             // and need scripted print() via contentWindow. Our HTML has no
             // scripts of its own.
           />

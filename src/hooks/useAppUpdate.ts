@@ -44,7 +44,7 @@ export function useAppUpdate() {
     didRunRef.current = true;
 
     if (!isTauriContext()) {
-      // Browser dev — updater plugin not available, stay idle.
+      // Browser dev - updater plugin not available, stay idle.
       return;
     }
 
@@ -59,7 +59,7 @@ export function useAppUpdate() {
       } catch (err) {
         if (cancelled) return;
         console.warn('Update check failed', err);
-        // Silent failure — no UI disruption on flaky network.
+        // Silent failure - no UI disruption on flaky network.
       }
     })();
 

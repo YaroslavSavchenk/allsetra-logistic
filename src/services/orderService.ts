@@ -1,7 +1,7 @@
 import type { Order, OrderpickItem, Unit } from '@/types/order';
 
 /**
- * Draft used by `createOrder` — the minimal fields logistics fills in when
+ * Draft used by `createOrder` - the minimal fields logistics fills in when
  * making a manual order. The service generates the id, ordernumber, status,
  * timestamp, source, quote owner and (for IMEI products) the Units.
  */
@@ -20,7 +20,7 @@ export interface OrderDraft {
 export interface ListShippedOrdersOptions {
   /** Cap the number of returned orders. Defaults to 50 server-side. */
   limit?: number;
-  /** Free-text filter — matched against order number and account. */
+  /** Free-text filter - matched against order number and account. */
   search?: string;
 }
 
@@ -49,7 +49,7 @@ export interface OrderService {
    */
   listShippedOrders(opts?: ListShippedOrdersOptions): Promise<Order[]>;
   /**
-   * Single shipped order — same payload as `getOrderById`, kept as a separate
+   * Single shipped order - same payload as `getOrderById`, kept as a separate
    * method so the live Zoho impl can hit a search endpoint scoped to
    * `Status:equals:Verstuurd` if useful.
    */

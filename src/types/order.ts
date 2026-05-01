@@ -7,7 +7,7 @@ export type OrderStatus =
 /**
  * Where the order originated. `'zoho'` means a sales-created order pulled
  * from CRM (the default and historic case). `'logistics'` means logistics
- * created the order locally — for ad-hoc shipments without a sales quote.
+ * created the order locally - for ad-hoc shipments without a sales quote.
  * The Zoho-push behaviour for logistics-originated orders is TBD; for now
  * they live only in the local store.
  */

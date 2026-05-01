@@ -5,7 +5,7 @@ import { RoleBadge } from './RoleBadge';
 
 /**
  * First-run / post-switch identity picker. Renders full-screen as a
- * full-window card (not a modal — there's nothing behind it the user
+ * full-window card (not a modal - there's nothing behind it the user
  * could possibly want to interact with first). Picking a profile
  * persists to localStorage via the context and unmounts the picker.
  *

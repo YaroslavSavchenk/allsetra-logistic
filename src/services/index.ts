@@ -36,12 +36,12 @@ const resolved: Promise<void> = (FORCE_MOCK
     if (configured) {
       active = zohoOrderService;
       resolvedMode = 'zoho';
-      console.info('[services] Zoho configured — using live service');
+      console.info('[services] Zoho configured - using live service');
     } else {
       console.info(
         FORCE_MOCK
-          ? '[services] FORCE_MOCK — using mock service'
-          : '[services] Zoho not configured — using mock service',
+          ? '[services] FORCE_MOCK - using mock service'
+          : '[services] Zoho not configured - using mock service',
       );
     }
   })
@@ -111,12 +111,12 @@ const catalogResolved: Promise<void> = (FORCE_MOCK
   .then((configured) => {
     if (configured) {
       activeListProducts = () => zohoCatalogService.listProducts();
-      console.info('[services] Zoho configured — using live product catalogue');
+      console.info('[services] Zoho configured - using live product catalogue');
     } else {
       console.info(
         FORCE_MOCK
-          ? '[services] FORCE_MOCK — picker reads from voorraad'
-          : '[services] Zoho not configured — picker reads from voorraad',
+          ? '[services] FORCE_MOCK - picker reads from voorraad'
+          : '[services] Zoho not configured - picker reads from voorraad',
       );
     }
   })

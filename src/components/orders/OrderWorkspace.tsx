@@ -39,11 +39,11 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [dirty, setDirty] = useState(false);
   // Waybill modal lives at workspace level so the toast action can pop it
-  // open without depending on routing — the order is already in flight to
+  // open without depending on routing - the order is already in flight to
   // the Verzonden tab, but we want logistics to print *before* moving on.
   const [waybillOrder, setWaybillOrder] = useState<Order | null>(null);
   // `packed` flips to true the first time the user opens the pakbon for the
-  // current order. Versturen is gated behind this — logistics must inspect
+  // current order. Versturen is gated behind this - logistics must inspect
   // the pakbon before shipping. Resets when switching orders.
   const [packed, setPacked] = useState(false);
 
@@ -53,7 +53,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
       setDirty(false);
       setPacked(false);
     }
-    // Reset only when switching to a different order — not on refetch of the
+    // Reset only when switching to a different order - not on refetch of the
     // same order, which would clobber in-progress edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order?.id]);
@@ -61,7 +61,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
   const validations = useMemo(() => computeRowValidations(units), [units]);
   const validCount = validations.filter((v) => v.validation.state === 'valid').length;
   // Orders without IMEI products (bike-security, sensors, accessoire-only)
-  // have no Units — they're shippable as soon as the order is loaded.
+  // have no Units - they're shippable as soon as the order is loaded.
   const allValid = units.length === 0 || validCount === units.length;
 
   const persistUnits = () => {
@@ -96,8 +96,8 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
       toast.success(`${shipped.orderNumber} verzonden`, {
         description:
           unitsCount > 0
-            ? `${shipped.account} — ${unitsCount} units`
-            : `${shipped.account} — ${itemsCount} items`,
+            ? `${shipped.account} - ${unitsCount} units`
+            : `${shipped.account} - ${itemsCount} items`,
         duration: 8000,
         action: {
           label: 'Pakbon openen',
@@ -107,7 +107,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
       onShipped();
     } catch (e) {
       if (e instanceof InsufficientStockError) {
-        // Pre-flight check blocked the ship — name the products with their
+        // Pre-flight check blocked the ship - name the products with their
         // actual numbers so logistics knows exactly what's short. Sonner
         // renders newlines in the description, but we fall back to " · "
         // separators for readability if a single line is preferred.
@@ -218,7 +218,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
             <SectionHeader icon={FileText} title="Pakbon" />
             <div className="flex items-center justify-between gap-4 rounded-lg border border-surface-700 bg-surface-850 px-4 py-4">
               <div className="text-sm text-slate-300">
-                Pakbon is klaar — voeg hem toe aan het verzendpakket.
+                Pakbon is klaar - voeg hem toe aan het verzendpakket.
               </div>
               <button
                 type="button"
@@ -237,12 +237,12 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm text-slate-400">
             {!allValid
-              ? `${validCount}/${units.length} units klaar — vul de overige IMEI's in om in te pakken.`
+              ? `${validCount}/${units.length} units klaar - vul de overige IMEI's in om in te pakken.`
               : !packed
                 ? units.length === 0
-                  ? 'Geen IMEI-producten — open de pakbon en pak in.'
-                  : 'Alle units gecontroleerd — open de pakbon en pak in.'
-                : 'Pakbon gegenereerd — klaar om te versturen.'}
+                  ? 'Geen IMEI-producten - open de pakbon en pak in.'
+                  : 'Alle units gecontroleerd - open de pakbon en pak in.'
+                : 'Pakbon gegenereerd - klaar om te versturen.'}
           </div>
           <button
             type="button"

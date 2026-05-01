@@ -8,7 +8,7 @@ import {
 /**
  * Live product catalogue fetched from the Zoho Products module via the Rust
  * `zoho_fetch_products` command. Zoho doesn't know which products carry an
- * IMEI — that's logistics-internal metadata — so we overlay `hasIMEI` from
+ * IMEI - that's logistics-internal metadata - so we overlay `hasIMEI` from
  * the local SKU-keyed strategy registry after the fetch.
  *
  * Same pattern as `zohoOrderService`: secrets stay in the Rust binary, the

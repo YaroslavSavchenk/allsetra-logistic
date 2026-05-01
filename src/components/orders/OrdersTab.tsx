@@ -11,7 +11,7 @@ export function OrdersTab() {
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    // Auto-selection only kicks in when we're not in create mode — otherwise
+    // Auto-selection only kicks in when we're not in create mode - otherwise
     // it would steal the workspace from a logistics medewerker filling out
     // the form. Also only auto-select when nothing is selected: stomping an
     // existing `selectedId` is dangerous because right after `useCreateOrder`

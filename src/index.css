@@ -4,7 +4,7 @@
 
 @layer base {
   /*
-   * Theme palettes. The dark theme is the default — applied on `:root` and
+   * Theme palettes. The dark theme is the default - applied on `:root` and
    * also `[data-theme='dark']` so the inline bootstrap script in `index.html`
    * can be more permissive without ever leaving variables unset.
    *
@@ -58,7 +58,7 @@
   #root {
     height: 100%;
     /* Prevent any wide child from horizontally scrolling the entire window
-       (e.g. a long single-line product name in the inventory table) — the
+       (e.g. a long single-line product name in the inventory table) - the
        individual scroll containers inside the app handle their own overflow. */
     overflow: hidden;
   }
@@ -74,7 +74,7 @@
   }
 
   /* Kill HTML5 drag-and-drop on every element. CSS user-drag is NOT
-     inherited per-element in Chromium/WebView2 — applying it only to body
+     inherited per-element in Chromium/WebView2 - applying it only to body
      leaves children draggable. Setting it on `*` plus the explicit common
      "draggable by default" tags (img/svg/a) prevents the translucent
      drag-image ghost that follows the cursor when a user drags from inside
@@ -105,7 +105,7 @@
     scrollbar-gutter: stable;
   }
 
-  /* Re-enable text selection inside text-bearing controls — search fields,
+  /* Re-enable text selection inside text-bearing controls - search fields,
      IMEI inputs, textareas, the IMEI display, the address blocks, the
      waybill content. Logistics still needs to copy/paste. */
   input,
@@ -126,7 +126,7 @@
    * default-readable foreground colour. Those values are bright greys that
    * vanish against a light background. Rather than refactor every component
    * to use semantic tokens, we override the slate-* utilities globally in
-   * light mode — flipping bright greys into dark equivalents so contrast
+   * light mode - flipping bright greys into dark equivalents so contrast
    * inverts cleanly.
    *
    * Caveats (light mode rough edges to revisit):
@@ -154,6 +154,139 @@
   }
   [data-theme='light'] .text-slate-600 {
     color: #94a3b8;
+  }
+
+  /*
+   * Tinted text re-mapping for light mode.
+   *
+   * The dark theme picks 200/300/400 tints because they're readable on a
+   * near-black backdrop. On a white panel those same tints (sky-300,
+   * amber-200/300, emerald-200/300, rose-200/300/400) wash out completely.
+   * Re-map each used tint to a darker variant in the same hue family with
+   * WCAG AA contrast against #ffffff.
+   */
+  [data-theme='light'] .text-sky-200,
+  [data-theme='light'] .text-sky-300 {
+    color: #0369a1; /* sky-700 */
+  }
+  [data-theme='light'] .text-amber-50,
+  [data-theme='light'] .text-amber-100,
+  [data-theme='light'] .text-amber-200,
+  [data-theme='light'] .text-amber-300,
+  [data-theme='light'] .text-amber-400 {
+    color: #92400e; /* amber-800 */
+  }
+  [data-theme='light'] .text-amber-200\/70 {
+    color: rgb(146 64 14 / 0.85);
+  }
+  [data-theme='light'] .text-amber-200\/50 {
+    color: rgb(146 64 14 / 0.65);
+  }
+  [data-theme='light'] .text-emerald-200,
+  [data-theme='light'] .text-emerald-300 {
+    color: #047857; /* emerald-700 */
+  }
+  [data-theme='light'] .text-emerald-100 {
+    color: #065f46; /* emerald-800 */
+  }
+  [data-theme='light'] .text-rose-200,
+  [data-theme='light'] .text-rose-300,
+  [data-theme='light'] .text-rose-400 {
+    color: #be123c; /* rose-700 */
+  }
+
+  /*
+   * Tinted backgrounds need higher opacity in light mode. 10% on a white
+   * panel is invisible; bumping to ~18-20% keeps the colour cue without
+   * overwhelming the panel.
+   */
+  [data-theme='light'] .bg-amber-500\/10,
+  [data-theme='light'] .bg-amber-500\/15 {
+    background-color: rgb(245 158 11 / 0.18);
+  }
+  [data-theme='light'] .bg-emerald-400\/10,
+  [data-theme='light'] .bg-emerald-400\/15,
+  [data-theme='light'] .bg-emerald-500\/5,
+  [data-theme='light'] .bg-emerald-500\/10,
+  [data-theme='light'] .bg-emerald-500\/15,
+  [data-theme='light'] .bg-emerald-500\/20 {
+    background-color: rgb(16 185 129 / 0.18);
+  }
+  [data-theme='light'] .bg-sky-500\/15 {
+    background-color: rgb(14 165 233 / 0.18);
+  }
+  [data-theme='light'] .bg-rose-400\/10,
+  [data-theme='light'] .bg-rose-400\/15,
+  [data-theme='light'] .bg-rose-400\/20,
+  [data-theme='light'] .bg-rose-400\/30 {
+    background-color: rgb(251 113 133 / 0.20);
+  }
+  [data-theme='light'] .bg-rose-500\/5,
+  [data-theme='light'] .bg-rose-500\/15,
+  [data-theme='light'] .bg-rose-500\/20 {
+    background-color: rgb(244 63 94 / 0.18);
+  }
+
+  /*
+   * Tinted borders. The pale dark-mode borders disappear on a white-ish
+   * panel; bump them to mid-saturation so the framing is clearly visible.
+   */
+  [data-theme='light'] .border-amber-400\/40,
+  [data-theme='light'] .border-amber-500\/30,
+  [data-theme='light'] .border-amber-500\/40 {
+    border-color: rgb(217 119 6 / 0.55);
+  }
+  [data-theme='light'] .border-emerald-400,
+  [data-theme='light'] .border-emerald-400\/30,
+  [data-theme='light'] .border-emerald-400\/40,
+  [data-theme='light'] .border-emerald-500\/30,
+  [data-theme='light'] .border-emerald-500\/50 {
+    border-color: rgb(5 150 105 / 0.55);
+  }
+  [data-theme='light'] .border-sky-400\/40 {
+    border-color: rgb(2 132 199 / 0.55);
+  }
+  [data-theme='light'] .border-rose-400,
+  [data-theme='light'] .border-rose-400\/30,
+  [data-theme='light'] .border-rose-400\/40,
+  [data-theme='light'] .border-rose-500\/60 {
+    border-color: rgb(190 18 60 / 0.55);
+  }
+
+  /*
+   * Surface borders. The default mapping flips surface-700 to slate-300,
+   * which is so pale on a white panel that section dividers vanish. Keep
+   * the variable values for backgrounds (the inverted ramp still works
+   * there) but force border-* utilities to a slightly darker neutral.
+   */
+  [data-theme='light'] .border-surface-700,
+  [data-theme='light'] .border-surface-800,
+  [data-theme='light'] .divide-surface-700 > * + *,
+  [data-theme='light'] .divide-surface-800 > * + * {
+    border-color: #cbd5e1; /* slate-300 - faint but visible against #fff */
+  }
+  [data-theme='light'] .border-surface-600 {
+    border-color: #94a3b8; /* slate-400 - hairline accent */
+  }
+
+  /*
+   * Inputs in light mode. Dark theme uses bg-surface-850 + border-surface-700
+   * so the input sits visibly inside the surface. After the inverted ramp
+   * those classes leave us with a near-white input on a near-white panel
+   * with a barely-visible border. Force a darker border + readable
+   * placeholder colour for every form field.
+   */
+  [data-theme='light'] input,
+  [data-theme='light'] textarea {
+    border-color: #cbd5e1;
+  }
+  [data-theme='light'] input:focus,
+  [data-theme='light'] textarea:focus {
+    border-color: var(--color-accent);
+  }
+  [data-theme='light'] input::placeholder,
+  [data-theme='light'] textarea::placeholder {
+    color: #64748b;
   }
 }
 

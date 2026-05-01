@@ -124,7 +124,7 @@ export function ShippedWorkspace({ orderId }: Props) {
           <SectionHeader icon={PackageCheck} title="Pakbon" />
           <div className="flex items-center justify-between gap-4 rounded-lg border border-surface-700 bg-surface-850 px-4 py-4">
             <div className="text-sm text-slate-300">
-              Pakbon voor deze order — open, print of download.
+              Pakbon voor deze order - open, print of download.
             </div>
             <button
               type="button"

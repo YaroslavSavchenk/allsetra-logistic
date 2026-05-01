@@ -1,5 +1,5 @@
 /**
- * Profielen + rollen. Niet hetzelfde als authenticatie — de Windows-login
+ * Profielen + rollen. Niet hetzelfde als authenticatie - de Windows-login
  * regelt dat al, en de installer is intern. Profielen labelen wie er aan
  * de bak zit, zodat de app:
  *   1. destructieve acties (voorraad aanpassen, inkooporders verwijderen)

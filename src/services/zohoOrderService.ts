@@ -8,7 +8,7 @@ import type {
 
 /**
  * Calls out to the Rust-side Zoho client via Tauri commands. The Rust side
- * owns the OAuth refresh token, token cache, and actual HTTP traffic —
+ * owns the OAuth refresh token, token cache, and actual HTTP traffic -
  * secrets are compiled into the Rust binary at build time and never reach
  * the frontend bundle.
  */
@@ -40,13 +40,13 @@ export const zohoOrderService: OrderService = {
   // TODO: decide with sales whether logistics-created orders should be
   // pushed into Zoho (visible in CRM, full audit) or stay local-only. Until
   // that decision is made, fail fast in live mode so we don't silently lose
-  // data — logistics will see the error and know not to use the feature
+  // data - logistics will see the error and know not to use the feature
   // until it's wired.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   createOrder(_draft: OrderDraft): Promise<Order> {
     return Promise.reject(
       new Error(
-        'Logistiek-orders maken is nog niet beschikbaar in Zoho-modus — schakel eerst de mock back-end in of vraag de Zoho-push-flow aan.',
+        'Logistiek-orders maken is nog niet beschikbaar in Zoho-modus - schakel eerst de mock back-end in of vraag de Zoho-push-flow aan.',
       ),
     );
   },
@@ -74,7 +74,7 @@ export const zohoOrderService: OrderService = {
 };
 
 /**
- * Runtime probe — did the Rust binary get built with Zoho secrets baked in?
+ * Runtime probe - did the Rust binary get built with Zoho secrets baked in?
  * `false` during dev (`npm run dev`) and during Tauri builds without the
  * CI secrets, `true` otherwise. Used by `services/index.ts` to pick between
  * mock and live.

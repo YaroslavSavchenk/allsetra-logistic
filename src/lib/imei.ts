@@ -35,7 +35,7 @@ export function validateImei(
   if (!detectedProductId) {
     return {
       state: 'invalid',
-      reason: 'Onbekende IMEI prefix — geen herkend product',
+      reason: 'Onbekende IMEI prefix - geen herkend product',
     };
   }
 

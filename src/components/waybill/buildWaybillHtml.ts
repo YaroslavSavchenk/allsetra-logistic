@@ -10,10 +10,10 @@ import { COMPANY_INFO, type CompanyInfo } from '@/config/company';
  *
  * Why HTML instead of `@react-pdf/renderer`:
  * the PDF approach uses `blob:` iframe URLs which the Tauri CSP blocks. A
- * `srcDoc` iframe runs same-origin under WebView2 with no CSP changes — the
+ * `srcDoc` iframe runs same-origin under WebView2 with no CSP changes - the
  * print dialog handles paper output and PDF export equally well.
  *
- * The HTML is fully self-contained — no external fonts, no external CSS,
+ * The HTML is fully self-contained - no external fonts, no external CSS,
  * no scripts. `@page` rules size the page to A4 with sane margins for print.
  *
  * Defensiveness: every dynamic value flowing from `order` / `company` is
@@ -257,7 +257,7 @@ export function buildWaybillHtml(
 
     <div class="footer">
       <p class="footer-total">Eindtotaal: ${escape(totalLabel)}</p>
-      <p class="pack-note">Deze pakbon hoort bij de zending — voeg hem toe in het verzendpakket.</p>
+      <p class="pack-note">Deze pakbon hoort bij de zending - voeg hem toe in het verzendpakket.</p>
       <p class="footer-meta">Pakbon gegenereerd: ${escape(generatedAtStr)}</p>
     </div>
   </div>
@@ -284,18 +284,18 @@ function renderHeaderRight(order: Order, verzenddatumIso: string): string {
   // Two distinct date lines:
   // - Verzenddatum: when the package goes out the door (today for not-yet-
   //   shipped orders, shippedAt for shipped orders).
-  // - Verzonden: audit timestamp of the status flip to Verstuurd; "—" until
+  // - Verzonden: audit timestamp of the status flip to Verstuurd; "-" until
   //   the order has actually been shipped. Both shown even when they refer
-  //   to the same day — they convey different info (operational vs. audit).
+  //   to the same day - they convey different info (operational vs. audit).
   return `<p class="pakbon-title">Pakbon</p>
-      <p class="order-number">#${escape(order.orderNumber || '—')}</p>
+      <p class="order-number">#${escape(order.orderNumber || '-')}</p>
       <p class="shipped-at"><span class="shipped-at-label">Verzenddatum:</span> ${escape(formatDateLong(verzenddatumIso))}</p>
       <p class="shipped-at"><span class="shipped-at-label">Verzonden:</span> ${escape(formatDateLong(order.shippedAt))}</p>`;
 }
 
 function renderAddressBlock(order: Order): string {
-  const account = order.account?.trim() || '—';
-  const addressLines = (order.address || '—')
+  const account = order.account?.trim() || '-';
+  const addressLines = (order.address || '-')
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
@@ -303,7 +303,7 @@ function renderAddressBlock(order: Order): string {
     ? addressLines
         .map((line) => `<p class="address-line">${escape(line)}</p>`)
         .join('\n      ')
-    : `<p class="address-line">—</p>`;
+    : `<p class="address-line">-</p>`;
 
   const postcode = (order.postcode || '').trim();
   const city = (order.city || '').trim();
@@ -315,7 +315,7 @@ function renderAddressBlock(order: Order): string {
   } else if (city) {
     postcodeCity = city;
   } else {
-    postcodeCity = '—';
+    postcodeCity = '-';
   }
 
   return `<p class="address-line-strong">${escape(account)}</p>
@@ -327,7 +327,7 @@ function renderUnitsSection(order: Order): string {
   const rows = order.units
     .map((unit) => {
       const product = escape(getProductName(unit.productId));
-      const imei = escape(unit.imei || '—');
+      const imei = escape(unit.imei || '-');
       return `<tr><td>${product}</td><td class="mono">${imei}</td></tr>`;
     })
     .join('\n          ');
@@ -379,7 +379,7 @@ function renderAccessoiresSection(
 // ---------------------------------------------------------------------------
 
 /**
- * Build the eindtotaal string defensively. Either side may be zero — the
+ * Build the eindtotaal string defensively. Either side may be zero - the
  * resulting label adapts to "X units + Y accessoires" / "X units" /
  * "Y accessoires" / "0 items".
  */
@@ -392,13 +392,13 @@ function buildTotalLabel(units: number, accessoires: number): string {
 }
 
 /**
- * Format an ISO date string in Dutch long form: `1 mei 2026`. Returns `—`
- * for null/invalid input — defensive against missing shippedAt.
+ * Format an ISO date string in Dutch long form: `1 mei 2026`. Returns `-`
+ * for null/invalid input - defensive against missing shippedAt.
  */
 function formatDateLong(iso: string | null | undefined): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return '-';
   return new Intl.DateTimeFormat('nl-NL', {
     day: 'numeric',
     month: 'long',
@@ -407,11 +407,11 @@ function formatDateLong(iso: string | null | undefined): string {
 }
 
 /**
- * Format a Date in Dutch long form with a 24h clock — used in the footer
+ * Format a Date in Dutch long form with a 24h clock - used in the footer
  * `Pakbon gegenereerd` row. Example: `1 mei 2026, 09:05`.
  */
 function formatDateTimeLong(date: Date): string {
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return '-';
   return new Intl.DateTimeFormat('nl-NL', {
     day: 'numeric',
     month: 'long',
@@ -423,7 +423,7 @@ function formatDateTimeLong(date: Date): string {
 
 /**
  * HTML-escape a string. Applied to every dynamic value that lands in the
- * pakbon — no value from `order` or `company` is ever interpolated raw.
+ * pakbon - no value from `order` or `company` is ever interpolated raw.
  * Without this a Zoho-authored note containing `<script>` or even a stray
  * `&` could break the document.
  */

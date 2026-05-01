@@ -15,7 +15,7 @@ interface Props {
  *
  * **Beheer-only.** Logistiek users see the form rendered read-only with a
  * locked-badge explanation. Manual stock adjustments bypass the audit trail
- * for purchase orders and shipments — only beheer should be able to trip
+ * for purchase orders and shipments - only beheer should be able to trip
  * that wire.
  */
 export function StockAdjustForm({ productId, productName }: Props) {

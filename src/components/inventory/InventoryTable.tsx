@@ -6,8 +6,8 @@ import { CATEGORY_LABEL, getProduct } from '@/lib/productStrategy';
 import { formatDateTime } from '@/lib/format';
 
 // Fixed render order for the sidebar groups. The category itself is set on
-// each Product upstream — in mock mode directly from productStrategy, in
-// live mode through zohoCatalogService's normaliseCategory() coercion — so
+// each Product upstream - in mock mode directly from productStrategy, in
+// live mode through zohoCatalogService's normaliseCategory() coercion - so
 // we just consume `Product.category` here without any service knowledge.
 const CATEGORY_ORDER: ProductCategory[] = [
   'tracker',
