@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Calendar,
+  Eye,
   FileText,
   Loader2,
   MapPin,
   Package,
-  Printer,
   Send,
   User,
   Building2,
@@ -26,7 +26,6 @@ import { NotesPanel } from './NotesPanel';
 import { OrderpickList } from './OrderpickList';
 import { UnitsTable, computeRowValidations } from './UnitsTable';
 import { WaybillViewer } from '@/components/waybill/WaybillViewer';
-import { buildWaybillHtml } from '@/components/waybill/buildWaybillHtml';
 
 interface Props {
   orderId: string;
@@ -41,16 +40,15 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
 
   const [units, setUnits] = useState<Unit[]>([]);
   const [dirty, setDirty] = useState(false);
-  // Modal viewer is only used by the post-ship toast. The in-workspace
-  // pakbon is rendered inline below — it stays attached to an Ingepakt
-  // order across navigation.
+  // Waybill modal lives at workspace level so the post-ship toast can pop
+  // it open, and so the inpakken-stap renders the pakbon on demand instead
+  // of always taking up the whole workspace.
   const [waybillOrder, setWaybillOrder] = useState<Order | null>(null);
-  const inlineWaybillRef = useRef<HTMLIFrameElement>(null);
 
-  // `packed` is now derived from the order's status, which persists on the
-  // server. This way, navigating away and back to an Ingepakt order keeps
-  // the waybill visible and the Versturen button armed - no need to redo
-  // the inpakken-stap.
+  // `packed` is derived from the order's status, which persists on the
+  // server. Navigating away and back to an Ingepakt order keeps the
+  // "Pakbon openen" button visible and the Versturen-knop armed - no need
+  // to redo the inpakken-stap.
   const packed = order?.status === 'Ingepakt';
 
   useEffect(() => {
@@ -69,23 +67,16 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
   // have no Units - they're shippable as soon as the order is loaded.
   const allValid = units.length === 0 || validCount === units.length;
 
-  // Pre-render the waybill HTML for the inline iframe. Recompute when the
-  // order content changes; cached otherwise so the iframe srcDoc doesn't
-  // re-mount on every render.
-  const waybillHtml = useMemo(() => {
-    if (!order || !packed) return '';
-    return buildWaybillHtml(order);
-  }, [order, packed]);
-
   const persistUnits = () => {
     if (!order || !dirty) return;
     updateUnits.mutate({ id: order.id, units });
     setDirty(false);
   };
 
-  // Inpakken click: persist the units (defensive in case the user typed an
-  // IMEI and never blurred), flip the order's status to Ingepakt, and let
-  // the inline waybill render itself once the refetch lands.
+  // Inpakken click: persist any pending IMEI edits, flip the order's
+  // status to Ingepakt, and open the pakbon modal once. After that the
+  // status persists across navigation so the user finds the same
+  // "Pakbon openen" button on return without redoing the step.
   const handlePack = async () => {
     if (!order || !allValid) return;
     try {
@@ -93,7 +84,10 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
         await updateUnits.mutateAsync({ id: order.id, units });
       }
       if (order.status !== 'Ingepakt') {
-        await markAsPacked.mutateAsync(order.id);
+        const packedOrder = await markAsPacked.mutateAsync(order.id);
+        setWaybillOrder(packedOrder);
+      } else {
+        setWaybillOrder(order);
       }
     } catch (e) {
       toast.error('Inpakken mislukt', {
@@ -102,17 +96,9 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
     }
   };
 
-  // Print the inline waybill via the iframe's own contentWindow. Same
-  // mechanism as the modal viewer.
-  const handlePrintWaybill = () => {
-    const iframe = inlineWaybillRef.current;
-    if (!iframe) return;
-    try {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-    } catch (err) {
-      console.warn('Pakbon: print mislukt', err);
-    }
+  const openWaybillForCurrent = () => {
+    if (!order) return;
+    setWaybillOrder(order);
   };
 
   const handleShip = async () => {
@@ -252,28 +238,19 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
 
         {packed && (
           <section>
-            <div className="mb-2 flex items-center justify-between gap-4">
-              <SectionHeader icon={FileText} title="Pakbon" />
+            <SectionHeader icon={FileText} title="Pakbon" />
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-surface-700 bg-surface-850 px-4 py-4">
+              <div className="text-sm text-slate-300">
+                Pakbon is klaar. Voeg hem toe aan het verzendpakket.
+              </div>
               <button
                 type="button"
-                onClick={handlePrintWaybill}
-                className="inline-flex items-center gap-2 rounded-md border border-surface-600 bg-surface-800 px-3 py-1.5 text-xs font-semibold text-slate-100 transition-colors hover:bg-surface-700"
+                onClick={openWaybillForCurrent}
+                className="inline-flex items-center gap-2 rounded-md border border-surface-600 bg-surface-800 px-4 py-2 text-sm font-semibold text-slate-100 transition-colors hover:bg-surface-700"
               >
-                <Printer className="h-3.5 w-3.5" />
-                Printen
+                <Eye className="h-4 w-4" />
+                Pakbon openen
               </button>
-            </div>
-            <p className="mb-2 text-xs text-slate-400">
-              Pakbon is klaar. Voeg hem toe aan het verzendpakket. Kies in het
-              printvenster "Microsoft Print to PDF" om als PDF op te slaan.
-            </p>
-            <div className="overflow-hidden rounded-lg border border-surface-700 bg-white">
-              <iframe
-                ref={inlineWaybillRef}
-                title={`Pakbon ${order.orderNumber}`}
-                srcDoc={waybillHtml}
-                className="block h-[700px] w-full border-0"
-              />
             </div>
           </section>
         )}

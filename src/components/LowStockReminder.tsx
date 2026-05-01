@@ -4,7 +4,8 @@ import { useInventory } from '@/hooks/useInventory';
 import { getProductName } from '@/lib/productStrategy';
 
 /**
- * Low-stock nudge that floats bottom-right above <UpdatePrompt/>. Surfaces
+ * Low-stock nudge that floats bottom-right (z-40, below UpdatePrompt's
+ * z-50 so a fresh-update card sits on top when both apply). Surfaces
  * products whose physical stock has dropped below the threshold AND that
  * have nothing on order - i.e. logistics has not yet placed a purchase
  * order to refill them. The card tells the user to bestel bij of bel even.
@@ -127,7 +128,7 @@ export function LowStockReminder({ onNavigate }: Props = {}) {
         type="button"
         onClick={() => setCollapsed(false)}
         aria-label={`${lowCount} ${lowCount === 1 ? 'product' : 'producten'} te bestellen, openen`}
-        className="fixed bottom-[120px] right-5 z-40 inline-flex items-center gap-2 rounded-full border border-rose-400/40 bg-rose-500/15 px-3 py-2 text-xs font-semibold text-rose-300 shadow-lg hover:bg-rose-500/25 cursor-pointer"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full border border-rose-400/40 bg-rose-500/15 px-3 py-2 text-xs font-semibold text-rose-300 shadow-lg hover:bg-rose-500/25 cursor-pointer"
       >
         <AlertTriangle className="h-3.5 w-3.5" />
         <span>{lowCount} te bestellen</span>
@@ -142,7 +143,7 @@ export function LowStockReminder({ onNavigate }: Props = {}) {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-[120px] right-5 z-40 w-[360px] overflow-hidden rounded-lg border border-rose-400/40 bg-surface-850 shadow-2xl"
+      className="fixed bottom-5 right-5 z-40 w-[360px] overflow-hidden rounded-lg border border-rose-400/40 bg-surface-850 shadow-2xl"
     >
       <div className="p-4">
         <div className="mb-3 flex items-start gap-3">
