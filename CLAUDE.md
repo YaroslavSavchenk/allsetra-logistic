@@ -40,12 +40,14 @@ Zoho path (Products module fetch).
 - **Styling**: Tailwind CSS
 - **Data fetching**: TanStack Query (React Query)
 - **State**: Local component state only — no Redux/Zustand
-- **PDF**: `@react-pdf/renderer` — used by the Verzonden-tab pakbon. Picked
-  over jsPDF + html2canvas because that path renders rasterised pages
-  (blurry on real printers); `@react-pdf/renderer` produces vector PDFs from
-  declarative React components. Goes against "deps minimaal" but accepted —
-  no Tailwind in the PDF (it has its own `StyleSheet`), and only the
-  Verzonden tab pulls it in.
+- **Pakbon**: pure HTML in an iframe + the system print dialog
+  (`iframe.contentWindow.print()`). No PDF library — the WebView2 print
+  pipeline already produces high-quality output, and "Microsoft Print to
+  PDF" is a default Windows printer so save-as-PDF is one click for the
+  user. We tried `@react-pdf/renderer` first (v0.3.0) but its `<PDFViewer>`
+  renders the doc through a `blob:` iframe URL that the Tauri CSP blocks,
+  so the modal showed up empty. The HTML approach has zero CSP gotchas and
+  is much smaller in the bundle.
 - **Backend**: the Tauri Rust side IS the backend (no separate server). For now
   it just hosts the window; when Zoho lands, it'll handle OAuth + API calls
   and own the secrets.
@@ -383,12 +385,21 @@ minimize clicks and keep feedback immediate.
 - Workspace (right) with order details
 - Sales note: if present, shown prominently as an amber warning block — must
   not be missed
-- Units table: one row per unit, product label resolved from the registry
-  (read-only), IMEI input (monospace), live validation indicator
-- Units section is **hidden entirely** for orders without IMEI products
-- Ship button: large, bottom of the workspace, disabled until every IMEI is
-  valid (or always enabled for non-IMEI orders). Progress text like
-  "3/5 units klaar" / "Geen IMEI-producten in deze order — klaar om te versturen"
+- **Three-step shipping flow** in the workspace footer:
+  1. **IMEI scannen** — units table with live IMEI validation (skipped for
+     non-IMEI orders).
+  2. **Inpakken** — footer button is enabled once all IMEIs are valid.
+     Click opens the pakbon modal so logistics can inspect/print before
+     packing the box. Required step: status text only switches to "klaar
+     om te versturen" after the pakbon was opened at least once for this
+     order.
+  3. **Versturen** — only available after step 2; click marks the order
+     `Verstuurd`, deducts inventory, fires the success toast (with another
+     "Pakbon openen" action as a safety net).
+- The footer button labels rotate through `Inpakken (X/Y)` (incomplete) →
+  `Inpakken` (ready) → `Versturen` (packed).
+- Switching between open orders resets the inpakken-flag — each order
+  needs its own pakbon-check before shipping.
 
 ### Verzonden tab
 
@@ -404,26 +415,30 @@ minimize clicks and keep feedback immediate.
   "Verzonden op {datum}" chip alongside the existing createdAt/quoteOwner
   block.
 - **Pakbon-section** at the bottom of the workspace: a single `Pakbon
-  openen` button that opens `WaybillViewer` (PDFViewer in a modal with
-  Sluiten / Downloaden / Printen actions). The same modal is also opened
-  via the toast-action that fires right after shipping.
+  openen` button that opens `WaybillViewer` (HTML preview in a modal with
+  Sluiten + Printen / opslaan als PDF). The same modal is opened from
+  three places: the Verzonden workspace, the Orders-tab "Inpakken" stage,
+  and the toast that fires right after shipping.
 
 ### Pakbon (waybill) template
 
-- `WaybillDocument` (`src/components/waybill/WaybillDocument.tsx`) is a
-  **reusable** `@react-pdf/renderer` component: `<WaybillDocument
-  order={order} company={COMPANY_INFO} />`. One template, every order. A4
-  portrait, vector PDF, no Tailwind (uses `StyleSheet.create` from
-  `@react-pdf/renderer`).
+- `buildWaybillHtml(order, company?)` (`src/components/waybill/buildWaybillHtml.ts`)
+  is a **pure function** that returns a complete `<!DOCTYPE html>...</html>`
+  string. Self-contained: all CSS inlined in `<style>`, A4 page size via
+  `@page`, no external fonts, no scripts.
+- `WaybillViewer` mounts the HTML inside an `<iframe srcDoc={html}>` for
+  the preview. The print button calls `iframe.contentWindow.print()` so
+  what you see is exactly what gets printed. Save-as-PDF is one click in
+  the print dialog ("Microsoft Print to PDF").
 - Layout: company header (logo or name fallback), afleveradres block,
-  Units section (skipped when `units.length === 0`), Accessoires section
-  (skipped when no `hasIMEI === false` orderpick lines), eindtotaal +
-  signature line + page numbering footer. Header and footer are `fixed` so
-  they repeat on multipage pakbonnen; the Units/Accessoires tables wrap
-  naturally with rows pinned via `wrap={false}`.
+  Units table (skipped when `units.length === 0`), Accessoires table
+  (skipped when no `hasIMEI === false` orderpick lines), eindtotaal,
+  signature line, generated-at footer.
 - **Defensive by design** — empty `units`, empty accessoires, missing
   `shippedAt`/`account`/`address`, and absent logo all render gracefully
-  (fallback "—" or skipped sections). Never crashes on partial data.
+  (fallback "—" or skipped sections). All dynamic strings are
+  HTML-escaped through a local `escape()` helper so a Zoho note containing
+  `<script>` or `&` does not break the document.
 - Company info lives in `src/config/company.ts` (`COMPANY_INFO`). It's a
   **placeholder constant** committed to the repo — no runtime config, no
   settings screen. Replace the values before going live; logo path stays
@@ -511,10 +526,9 @@ src/                          Frontend (React + TS)
     shipped/                  Verzonden-tab UI (ShippedSidebar,
                               ShippedWorkspace, ShippedTab) — read-only,
                               hosts the pakbon button
-    waybill/                  Pakbon (waybill) PDF: WaybillDocument
-                              (reusable @react-pdf/renderer template),
-                              WaybillViewer (modal with PDFViewer + print +
-                              download), waybillStyles
+    waybill/                  Pakbon (waybill): buildWaybillHtml (pure HTML
+                              generator, A4 + inline CSS), WaybillViewer
+                              (modal + iframe preview + system print)
     inventory/                Voorraad-tab UI (InventoryTab, InventoryTable,
                               InventoryDetail, StockAdjustForm,
                               PurchaseOrderForm, OpenPurchaseOrders,

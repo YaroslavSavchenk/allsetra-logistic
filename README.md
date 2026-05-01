@@ -37,7 +37,7 @@ of uit de lokale productregistratie (mock mode); de UI is hetzelfde.
 | Data fetching     | TanStack Query 5               |
 | Toast feedback    | Sonner                         |
 | Iconen            | lucide-react                   |
-| Pakbon (PDF)      | @react-pdf/renderer            |
+| Pakbon            | HTML + system print dialog     |
 
 **Tauri gekozen boven Electron** omdat:
 
@@ -47,11 +47,13 @@ of uit de lokale productregistratie (mock mode); de UI is hetzelfde.
   straks de Zoho Client Secret & Refresh Token leven.
 - Opstarttijd en RAM-gebruik zijn significant lager.
 
-**`@react-pdf/renderer` gekozen voor de pakbon** omdat HTML→PDF via canvas
-(jsPDF + html2canvas) rasterized output geeft — wazig op echte printers.
-`@react-pdf/renderer` bouwt de PDF declaratief uit React-componenten en
-levert echte vector-pagina's. Eén template (`WaybillDocument`) wordt
-hergebruikt voor élke order — geen one-off generators per ordertype.
+**Pakbon = HTML + system print** in plaats van een PDF-library: de eerste
+poging met `@react-pdf/renderer` rendert via een `blob:` iframe-URL die de
+Tauri CSP blokkeert (modal blijft leeg). HTML in een `srcDoc` iframe +
+`iframe.contentWindow.print()` werkt 100% in WebView2, gebruikt de native
+print-pipeline (scherper dan canvas-rasterisering), en de gebruiker kan
+"Microsoft Print to PDF" kiezen om als PDF op te slaan. Eén template
+(`buildWaybillHtml`) wordt hergebruikt voor élke order.
 
 ## Voor de eindgebruiker (logistiek medewerker)
 
@@ -192,9 +194,9 @@ src/                          Frontend (React + TS)
 │   │                         NewOrderForm, …
 │   ├── shipped/              Verzonden tab — ShippedTab, ShippedSidebar,
 │   │                         ShippedWorkspace (read-only + pakbon-knop)
-│   ├── waybill/              Pakbon: WaybillDocument (@react-pdf template),
-│   │                         WaybillViewer (modal met print/download),
-│   │                         waybillStyles
+│   ├── waybill/              Pakbon: buildWaybillHtml (HTML-generator),
+│   │                         WaybillViewer (modal met iframe-preview +
+│   │                         system print)
 │   └── inventory/            InventoryTab + tabel/detail/forms/audit
 ├── App.tsx                   Tab-switch
 └── main.tsx                  Single QueryClient
@@ -229,14 +231,16 @@ scripts/
 - IMEI's mogen niet dubbel voorkomen binnen dezelfde order.
 - Producten zonder IMEI (accessoires, fietsbeveiliging, sensors) staan wel
   in `orderpick` maar hebben geen Units — er is geen IMEI-invoer voor.
-- "Versturen" werkt pas als **alle** units een geldige IMEI hebben (of meteen
-  voor orders zonder IMEI-producten).
+- **Drie-stappen flow** in de Orders-tab: (1) IMEI scannen, (2) Inpakken
+  (opent pakbon — verplicht voordat de Versturen-knop verschijnt), (3)
+  Versturen. Voor orders zonder IMEI-producten begint de flow direct bij
+  stap 2.
 - Een open order schuift automatisch naar `In behandeling` zodra er een IMEI
   wordt ingevuld; naar `Verstuurd` na een succesvolle versturen-actie. Hij
   verdwijnt uit de Orders-lijst en verschijnt boven in de Verzonden-tab,
   inclusief direct bruikbare pakbon-knop.
-- Direct na verzending verschijnt een toast met **Pakbon openen** zodat de
-  pakbon geprint kan worden vóór de volgende order wordt opgepakt.
+- Direct na verzending verschijnt nóg een toast met **Pakbon openen** —
+  vangnet voor het geval logistiek bij de inpakken-stap niet heeft geprint.
 - Bij versturen schrijft de app de aantallen uit `orderpick` af van
   `opVoorraad`. Negatieve voorraad geeft een waarschuwingstoast maar
   blokkeert het versturen niet.
@@ -288,30 +292,34 @@ status `Verstuurd` zodat de Verzonden-tab niet leeg is bij eerste start
 logistics-created LCO-order). Alle vier hebben een `shippedAt` zodat ze in
 de Verzonden-sidebar verschijnen op verzenddatum.
 
-## Pakbon (Verzonden tab)
+## Pakbon
 
-Elke verstuurde order heeft een **pakbon** — vector PDF, A4 portrait,
-hergeneerd uit de live order-data (geen archief, Zoho is bron van
-waarheid). De PDF is opgebouwd uit één herbruikbaar React-component:
-[`WaybillDocument`](./src/components/waybill/WaybillDocument.tsx). Eén
-template voor alle product-lijnen — RouteConnect, accessoires,
-fietsbeveiliging, sensors. Long-list overflow loopt automatisch door over
-meerdere pagina's met repeating header en footer. Edge cases (lege units,
-lege accessoires, ontbrekende velden) crashen niet maar tonen "—" of slaan
-de sectie over.
+Elke order heeft een **pakbon** — A4-portrait HTML-document, gegenereerd
+uit de live order-data via [`buildWaybillHtml`](./src/components/waybill/buildWaybillHtml.ts).
+Geen PDF-library, geen archief: Zoho is bron van waarheid en de pakbon
+wordt elke keer opnieuw opgebouwd. Eén template voor alle productlijnen.
 
-Drie acties in de UI:
+De viewer toont de pakbon in een iframe (zelfde HTML als wat geprint
+wordt — WYSIWYG). Twee acties:
 
-- **Pakbon openen** — modal met inline PDF-preview (`<PDFViewer>`).
-- **Downloaden** — `pakbon-{ordernummer}.pdf` op een door de gebruiker
-  gekozen locatie.
-- **Printen** — opent de OS-print dialoog op de PDF.
+- **Sluiten**
+- **Printen / opslaan als PDF** — opent de OS-print dialoog. Voor PDF
+  kies je "Microsoft Print to PDF" in het printvenster.
 
-De viewer wordt op twee plekken aangeroepen:
+De viewer wordt op drie plekken aangeroepen:
 
-1. In de Verzonden-tab workspace via een knop in de Pakbon-sectie.
-2. Als toast-actie direct na het versturen van een order — zo kan de
-   pakbon geprint worden vóór de volgende order wordt opgepakt.
+1. **Inpakken-stap** in de Orders-tab — verplichte stap tussen IMEI
+   scannen en Versturen. Logistiek opent de pakbon, controleert/print, en
+   pakt de doos in. Pas dan komt de Versturen-knop beschikbaar.
+2. **Verzonden-tab** workspace via "Pakbon openen" voor reeds verzonden
+   orders.
+3. Als toast-actie direct ná versturen — vangnet voor het geval logistiek
+   bij stap 1 niet heeft geprint.
+
+Edge cases (lege units, lege accessoires, ontbrekende velden) crashen
+niet maar tonen "—" of slaan de sectie over. Alle dynamische velden
+worden HTML-escaped, dus een Zoho-notitie met `<script>` of `&` breekt
+het document niet.
 
 **Bedrijfsgegevens** (naam, adres, KvK, BTW, eventueel logo) staan in
 [`src/config/company.ts`](./src/config/company.ts) als `COMPANY_INFO`

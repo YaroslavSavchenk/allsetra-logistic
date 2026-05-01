@@ -4,6 +4,7 @@ import {
   Calendar,
   Loader2,
   MapPin,
+  Package,
   Send,
   User,
   Building2,
@@ -38,11 +39,16 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
   // open without depending on routing — the order is already in flight to
   // the Verzonden tab, but we want logistics to print *before* moving on.
   const [waybillOrder, setWaybillOrder] = useState<Order | null>(null);
+  // `packed` flips to true the first time the user opens the pakbon for the
+  // current order. Versturen is gated behind this — logistics must inspect
+  // the pakbon before shipping. Resets when switching orders.
+  const [packed, setPacked] = useState(false);
 
   useEffect(() => {
     if (order) {
       setUnits(order.units);
       setDirty(false);
+      setPacked(false);
     }
     // Reset only when switching to a different order — not on refetch of the
     // same order, which would clobber in-progress edits.
@@ -59,6 +65,15 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
     if (!order || !dirty) return;
     updateUnits.mutate({ id: order.id, units });
     setDirty(false);
+  };
+
+  // Opening the pakbon for the current order also marks it as packed,
+  // unlocking the Versturen button. Reopening from the post-ship toast
+  // (different order id) does not flip the flag of the workspace order.
+  const openWaybillForCurrent = () => {
+    if (!order) return;
+    setWaybillOrder(order);
+    setPacked(true);
   };
 
   const handleShip = async () => {
@@ -169,7 +184,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
         {units.length > 0 && (
           <section>
             <div className="mb-2 flex items-baseline justify-between">
-              <SectionHeader title="Units — IMEI invoeren" />
+              <SectionHeader title="1. IMEI scannen" />
               <span className="font-mono text-xs text-slate-400">
                 {validCount}/{units.length} geldig
               </span>
@@ -190,26 +205,32 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
       <footer className="sticky bottom-0 border-t border-surface-700 bg-surface-900/95 px-8 py-4 backdrop-blur">
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm text-slate-400">
-            {units.length === 0
-              ? 'Geen IMEI-producten in deze order — klaar om te versturen.'
-              : allValid
-                ? 'Alle units gecontroleerd — klaar om te versturen.'
-                : `${validCount}/${units.length} units klaar — vul de overige IMEI's in om te versturen.`}
+            {!allValid
+              ? `${validCount}/${units.length} units klaar — vul de overige IMEI's in om in te pakken.`
+              : !packed
+                ? units.length === 0
+                  ? 'Geen IMEI-producten — open de pakbon en pak in.'
+                  : 'Alle units gecontroleerd — open de pakbon en pak in.'
+                : 'Pakbon gegenereerd — klaar om te versturen.'}
           </div>
           <button
             type="button"
-            onClick={handleShip}
+            onClick={packed ? handleShip : openWaybillForCurrent}
             disabled={!allValid || shipping}
             className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-surface-950 shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-surface-700 disabled:text-slate-500"
           >
             {shipping ? (
               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
+            ) : packed ? (
               <Send className="h-4 w-4" />
+            ) : (
+              <Package className="h-4 w-4" />
             )}
-            {units.length === 0
+            {packed
               ? 'Versturen'
-              : `Versturen (${validCount}/${units.length})`}
+              : allValid
+                ? 'Inpakken'
+                : `Inpakken (${validCount}/${units.length})`}
           </button>
         </div>
       </footer>
