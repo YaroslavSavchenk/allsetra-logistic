@@ -7,7 +7,7 @@ fietsbeveiliging, sensors, anything Allsetra ships. RouteConnect is just the
 first product family with an IMEI flow; the architecture is product-pluggable
 so adding a new line is a config change, not a rewrite.
 
-The app has three surfaces, switched via the top tab bar:
+The app has four surfaces, switched via the top tab bar:
 
 - **Orders** — both sales-originated orders pulled from Zoho CRM and
   ad-hoc orders that logistics creates themselves (for shipments without
@@ -23,6 +23,10 @@ The app has three surfaces, switched via the top tab bar:
   purchase orders (`opBestelling`), plus a full mutation audit trail. Stock
   moves automatically as orders are shipped and purchase orders are received;
   manual adjustments require a reason.
+- **Instellingen** — preferences (theme), the active profile, an accounts
+  list (beheer-only), and read-only app/version info. No API keys, no
+  first-run wizards — the rule from "Non-negotiable UX" still holds for
+  secrets; this tab is **only** for preferences and identity.
 
 Sales-originated orders come from Zoho CRM. Logistics-originated orders
 live in the local store (Zoho push is TBD). Today the order side runs on
@@ -376,13 +380,15 @@ minimize clicks and keep feedback immediate.
 
 ### Top-level layout
 
-- **TopNav** (full-width, ~56px tall) with the brand and a tab bar. Tabs
-  today: `Orders`, `Verzonden`, `Voorraad`. Component state in `App.tsx`
+- **TopNav** (full-width, ~56px tall) with the brand, the tab bar, the
+  Mock-data badge (only visible in mock mode), and the active-profile
+  badge on the right (clicking it jumps to Settings). Tabs today: `Orders`,
+  `Verzonden`, `Voorraad`, `Instellingen`. Component state in `App.tsx`
   switches the body — no router. Adding a tab is one entry in the `TABS`
   array plus a `<NewTab />` mount.
 - Tabs are generic: `TopNav` is parameterised on a `TabDefinition<Id>` array,
-  so adding a fourth tab does not require any structural change.
-- **All three tab bodies stay mounted at all times** — `App.tsx` toggles
+  so adding a fifth tab does not require any structural change.
+- **All four tab bodies stay mounted at all times** — `App.tsx` toggles
   visibility via `display: none` on the inactive ones. This preserves each
   tab's local state (selectedId, search input, etc.) across switches so
   the user lands back where they were instead of on an auto-selected
@@ -494,6 +500,60 @@ minimize clicks and keep feedback immediate.
 
 No mobile. No playful aesthetic — this is a workstation.
 
+### Theme system
+
+Dark + light themes share a CSS-variable palette (`src/index.css`,
+`tailwind.config.js`). Surface and accent colours are exposed as
+`--color-surface-*` / `--color-accent-*` and remap automatically when the
+`data-theme` attribute on `<html>` flips between `'dark'` and `'light'`.
+Components reference Tailwind's `surface-*` / `accent` utilities as
+before — no per-component refactor needed.
+
+`text-slate-*` utilities are heavily used as foreground text. Light mode
+re-tints them globally via `[data-theme='light'] .text-slate-N` overrides
+in `index.css` so contrast inverts cleanly. Light mode does **not** remap
+`bg-slate-*` or `border-slate-*`; if a future component uses those for
+non-text purposes, expect light-mode polish work.
+
+The user's choice (`'system' | 'light' | 'dark'`) lives in localStorage
+under `logistiek.theme`. An inline bootstrap script in `index.html`
+applies the resolved theme before React mounts to avoid a dark→light
+flash. The `useTheme` hook (`src/hooks/useTheme.ts`) keeps things in sync
+at runtime, including OS-preference changes when the user picked
+`'system'`.
+
+### Profiles + roles
+
+The app is single-machine and the OS already authenticated the user;
+profiles are **identity tagging**, not authentication. Two roles today:
+
+- `logistiek` — daily operator. Can do everything that's part of the
+  shipment + receive flow.
+- `beheer` — admin. Can additionally adjust stock manually and delete
+  purchase orders.
+
+Profile definitions live in `src/config/users.ts`. Editing the list is a
+deliberate code change — there is no UI to add/remove profiles. The
+active profile is persisted in localStorage under
+`logistiek.currentUserId`. The `<ProfilePicker>` renders full-screen on
+first run (and after "Wissel profiel"), gating the rest of the app.
+
+`useHasRole(role)` returns true if the active user holds the role.
+**Beheer is a superset of logistiek** — `useHasRole('logistiek')` is true
+for both roles, so daily-flow gates don't accidentally lock beheer out.
+
+Currently gated to beheer-only:
+
+- Stock-adjust form (`src/components/inventory/StockAdjustForm.tsx`) —
+  rendered read-only for logistiek with a "Alleen beheer kan voorraad
+  aanpassen" badge.
+- PO trash button + confirm bar (`src/components/inventory/OpenPurchaseOrders.tsx`) —
+  hidden entirely for logistiek (no point showing a button they can't use).
+  "Ontvangen" stays for both roles.
+
+To gate a new action: import `useHasRole` and branch on it. Don't reach
+into `localStorage` directly from components.
+
 ## Project layout
 
 ```
@@ -513,6 +573,11 @@ src/                          Frontend (React + TS)
                               used by the Verzonden sidebar
   config/
     company.ts                COMPANY_INFO placeholder — pakbon header data
+    users.ts                  USERS list (logistiek + beheer profiles) +
+                              UserRole / UserProfile types
+  contexts/
+    CurrentUserContext.tsx    Active-profile React context (provider +
+                              useCurrentUser/useCurrentUserOrNull/useHasRole)
   services/
     orderService.ts           Interface (incl. createOrder + OrderDraft +
                               listShippedOrders/getShippedOrder)
@@ -534,6 +599,9 @@ src/                          Frontend (React + TS)
                               for the Verzonden tab)
     useInventory.ts           Inventory + catalogue hooks; exports query keys
     useAppUpdate.ts           Auto-update prompt
+    useTheme.ts               Theme choice (system/light/dark) + resolved
+                              theme + persistence; subscribes to OS pref
+                              changes when in 'system' mode
   components/
     TopNav.tsx                Generic tab bar
     ProductPicker.tsx         Searchable single-select combobox over the
@@ -552,9 +620,14 @@ src/                          Frontend (React + TS)
     inventory/                Voorraad-tab UI (InventoryTab, InventoryTable,
                               InventoryDetail, StockAdjustForm,
                               PurchaseOrderForm, OpenPurchaseOrders,
-                              MovementsList)
-  App.tsx                     Top-level tab switch
-  main.tsx                    Single QueryClient
+                              MovementsList) — StockAdjustForm + PO trash
+                              are gated to beheer-only
+    settings/                 Instellingen-tab UI (SettingsTab,
+                              ThemeSection, ProfileSection,
+                              AccountsSection, AppInfoSection,
+                              ProfilePicker, RoleBadge)
+  App.tsx                     Top-level tab switch + first-run profile gate
+  main.tsx                    Single QueryClient + CurrentUserProvider
 
 src-tauri/                    Desktop shell (Rust)
   Cargo.toml

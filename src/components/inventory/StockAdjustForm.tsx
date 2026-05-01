@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Lock, Plus } from 'lucide-react';
 import { useAdjustStock } from '@/hooks/useInventory';
+import { useHasRole } from '@/contexts/CurrentUserContext';
 
 interface Props {
   productId: string;
@@ -11,9 +12,15 @@ interface Props {
 /**
  * Manual stock correction form. Reason is mandatory. Submits a signed delta
  * via the `adjustStock` service call.
+ *
+ * **Beheer-only.** Logistiek users see the form rendered read-only with a
+ * locked-badge explanation. Manual stock adjustments bypass the audit trail
+ * for purchase orders and shipments — only beheer should be able to trip
+ * that wire.
  */
 export function StockAdjustForm({ productId, productName }: Props) {
   const adjust = useAdjustStock();
+  const isBeheer = useHasRole('beheer');
   const [delta, setDelta] = useState<string>('');
   const [reason, setReason] = useState<string>('');
 
@@ -24,6 +31,7 @@ export function StockAdjustForm({ productId, productName }: Props) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!isBeheer) return;
     const parsed = Number(delta);
     if (!Number.isFinite(parsed) || parsed === 0) {
       toast.error('Aanpassing ongeldig', {
@@ -49,12 +57,19 @@ export function StockAdjustForm({ productId, productName }: Props) {
   };
 
   const busy = adjust.isPending;
+  const disabled = busy || !isBeheer;
 
   return (
     <form
       onSubmit={handleSubmit}
       className="rounded-lg border border-surface-700 bg-surface-850 p-4"
     >
+      {!isBeheer && (
+        <div className="mb-3 flex items-center gap-2 rounded-md border border-surface-700 bg-surface-900 px-3 py-2 text-xs text-slate-400">
+          <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Alleen beheer kan voorraad aanpassen.</span>
+        </div>
+      )}
       <div className="mb-3 grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -67,7 +82,7 @@ export function StockAdjustForm({ productId, productName }: Props) {
             placeholder="bijv. -2"
             value={delta}
             onChange={(e) => setDelta(e.target.value)}
-            disabled={busy}
+            disabled={disabled}
             className="rounded-md border border-surface-700 bg-surface-900 px-3 py-2 font-mono text-sm text-slate-100 placeholder:text-slate-500 focus:border-accent/60 disabled:opacity-50"
           />
         </label>
@@ -80,7 +95,7 @@ export function StockAdjustForm({ productId, productName }: Props) {
             placeholder="bijv. telling, schade, gevonden bij retour…"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            disabled={busy}
+            disabled={disabled}
             className="resize-y rounded-md border border-surface-700 bg-surface-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-accent/60 disabled:opacity-50"
           />
         </label>
@@ -88,7 +103,7 @@ export function StockAdjustForm({ productId, productName }: Props) {
       <div className="flex items-center justify-end">
         <button
           type="submit"
-          disabled={busy || !delta || !reason.trim()}
+          disabled={disabled || !delta || !reason.trim()}
           className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-surface-950 transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-surface-700 disabled:text-slate-500"
         >
           {busy ? (

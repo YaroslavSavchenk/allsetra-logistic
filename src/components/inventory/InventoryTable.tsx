@@ -1,8 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Loader2, Package, Search } from 'lucide-react';
 import type { InventoryItem } from '@/types/inventory';
-import { getProduct } from '@/lib/productStrategy';
+import type { ProductCategory } from '@/types/product';
+import { CATEGORY_LABEL, getProduct } from '@/lib/productStrategy';
 import { formatDateTime } from '@/lib/format';
+
+// Fixed render order for the sidebar groups. The category itself is set on
+// each Product upstream — in mock mode directly from productStrategy, in
+// live mode through zohoCatalogService's normaliseCategory() coercion — so
+// we just consume `Product.category` here without any service knowledge.
+const CATEGORY_ORDER: ProductCategory[] = [
+  'tracker',
+  'tracker-accessory',
+  'bike-security',
+  'sensor',
+];
 
 interface Props {
   inventory: InventoryItem[];
@@ -50,6 +62,36 @@ export function InventoryTable({
       return a.item.opVoorraad - b.item.opVoorraad;
     });
   }, [rows, query]);
+
+  // Group the (already-sorted) filtered rows by category, preserving the
+  // within-group order. Render order is fixed via CATEGORY_ORDER; empty
+  // groups are skipped so no spurious header/whitespace appears. A
+  // category not in CATEGORY_ORDER (e.g. a future Zoho category before
+  // the registry catches up) renders last with its raw key as the header
+  // so unknown data stays visible instead of being silently dropped.
+  const grouped = useMemo(() => {
+    const buckets = new Map<string, typeof filtered>();
+    for (const row of filtered) {
+      const key = row.product!.category;
+      const list = buckets.get(key);
+      if (list) list.push(row);
+      else buckets.set(key, [row]);
+    }
+    const ordered: Array<{ category: string; label: string; rows: typeof filtered }> = [];
+    for (const cat of CATEGORY_ORDER) {
+      const list = buckets.get(cat);
+      if (list && list.length > 0) {
+        ordered.push({ category: cat, label: CATEGORY_LABEL[cat], rows: list });
+        buckets.delete(cat);
+      }
+    }
+    for (const [cat, list] of buckets) {
+      if (list.length > 0) {
+        ordered.push({ category: cat, label: cat, rows: list });
+      }
+    }
+    return ordered;
+  }, [filtered]);
 
   return (
     <aside className="flex w-[420px] flex-shrink-0 flex-col border-r border-surface-700 bg-surface-900">
@@ -105,21 +147,33 @@ export function InventoryTable({
             {query ? 'Geen producten gevonden' : 'Geen voorraad'}
           </div>
         )}
-        <ul className="divide-y divide-surface-800">
-          {filtered.map(({ item, product }) => (
-            <ProductRow
-              key={item.productId}
-              productId={item.productId}
-              name={product!.name}
-              sku={product!.sku}
-              opVoorraad={item.opVoorraad}
-              opBestelling={item.opBestelling}
-              lastMovementAt={item.lastMovementAt}
-              isSelected={item.productId === selectedProductId}
-              onClick={() => onSelect(item.productId)}
-            />
-          ))}
-        </ul>
+        {grouped.map(({ category, label, rows: groupRows }) => (
+          <section key={category}>
+            <div className="sticky top-0 z-10 flex items-baseline justify-between bg-surface-900/95 px-4 py-2 backdrop-blur">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                {label}
+              </span>
+              <span className="font-mono text-xs text-accent">
+                {groupRows.length}
+              </span>
+            </div>
+            <ul className="divide-y divide-surface-800">
+              {groupRows.map(({ item, product }) => (
+                <ProductRow
+                  key={item.productId}
+                  productId={item.productId}
+                  name={product!.name}
+                  sku={product!.sku}
+                  opVoorraad={item.opVoorraad}
+                  opBestelling={item.opBestelling}
+                  lastMovementAt={item.lastMovementAt}
+                  isSelected={item.productId === selectedProductId}
+                  onClick={() => onSelect(item.productId)}
+                />
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
     </aside>
   );

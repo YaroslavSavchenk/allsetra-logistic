@@ -13,19 +13,26 @@ export default {
           'monospace',
         ],
       },
+      // Surface + accent colours are routed through CSS custom properties so
+      // a `data-theme` attribute on <html> swaps the palette instantly without
+      // touching individual components. The actual colour values live in
+      // `src/index.css` under `[data-theme='dark']` / `[data-theme='light']`.
+      // Tailwind opacity utilities (e.g. bg-surface-850/60) keep working
+      // because Tailwind 3.3+ wraps custom properties in color-mix() when an
+      // alpha modifier is present.
       colors: {
         surface: {
-          950: '#0b0f14',
-          900: '#0f141b',
-          850: '#131925',
-          800: '#1a2130',
-          700: '#232c3d',
-          600: '#2f3a4f',
+          950: 'var(--color-surface-950)',
+          900: 'var(--color-surface-900)',
+          850: 'var(--color-surface-850)',
+          800: 'var(--color-surface-800)',
+          700: 'var(--color-surface-700)',
+          600: 'var(--color-surface-600)',
         },
         accent: {
-          DEFAULT: '#f59f00',
-          hover: '#ffb224',
-          muted: '#b7750d',
+          DEFAULT: 'var(--color-accent)',
+          hover: 'var(--color-accent-hover)',
+          muted: 'var(--color-accent-muted)',
         },
       },
     },

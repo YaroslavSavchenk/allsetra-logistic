@@ -3,11 +3,12 @@
 Interne desktop-applicatie voor het logistiek team van Allsetra. De app is
 gestart als IMEI-flow voor RouteConnect tracking-devices (Eco5, HCV5-Lite,
 Smart5) en doet inmiddels alle logistiek: tracker-orders met IMEI's, plus
-productlijnen zonder IMEI (accessoires, fietsbeveiliging, sensors). Drie
+productlijnen zonder IMEI (accessoires, fietsbeveiliging, sensors). Vier
 tabs bovenaan: **Orders** (klantorders prepen + versturen, óf zelf een
 order aanmaken voor ad-hoc verzendingen), **Verzonden** (alle verstuurde
-orders met pakbon-PDF — openen, printen, downloaden) en **Voorraad** (per
-product de stand, openstaande inkooporders en mutatiehistorie).
+orders met pakbon-PDF — openen, printen, downloaden), **Voorraad** (per
+product de stand, openstaande inkooporders en mutatiehistorie) en
+**Instellingen** (thema-keuze, profielwissel, app-info).
 
 Twee orderstromen:
 
@@ -61,10 +62,16 @@ Eén download en je bent klaar:
 
 1. Ga naar de [Releases pagina](https://github.com/YaroslavSavchenk/allsetra-logistic/releases)
 2. Download de laatste `.msi` of `.exe`
-3. Dubbelklik, installeer, klaar — geen configuratie nodig
+3. Dubbelklik, installeer, en kies bij de eerste start je profiel
+   (logistiek of beheer) — geen wachtwoord, geen configuratie
 4. Daarna **updatet de app zichzelf automatisch**: bij elke start wordt
    gecheckt of er een nieuwere versie is; als dat zo is verschijnt
    rechtsonder een notificatie met "Nu updaten" / "Later"
+
+Onder **Instellingen** kun je het thema (donker/licht/systeem) wisselen
+en op een ander profiel overstappen. Beheer-rollen kunnen daarnaast
+voorraad handmatig aanpassen en inkooporders verwijderen — voor
+logistiek staat dat uit.
 
 Eventuele secrets (Zoho API sleutels straks) zijn nooit zichtbaar — ze zitten
 óf gecompileerd in de Rust-binary (niet leesbaar als tekst), óf in de

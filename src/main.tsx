@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import App from './App';
+import { CurrentUserProvider } from './contexts/CurrentUserContext';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -34,7 +35,9 @@ window.addEventListener('dragstart', (e) => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <CurrentUserProvider>
+        <App />
+      </CurrentUserProvider>
       <Toaster
         theme="dark"
         position="bottom-right"

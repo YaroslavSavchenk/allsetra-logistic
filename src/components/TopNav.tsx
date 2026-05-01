@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { FlaskConical, Truck } from 'lucide-react';
+import { FlaskConical, Truck, UserCircle2 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { getServiceMode, type ServiceMode } from '@/services';
+import { useCurrentUserOrNull } from '@/contexts/CurrentUserContext';
+import { ROLE_LABEL } from '@/config/users';
 
 export interface TabDefinition<Id extends string = string> {
   id: Id;
@@ -13,14 +15,22 @@ interface Props<Id extends string> {
   tabs: ReadonlyArray<TabDefinition<Id>>;
   activeTab: Id;
   onTabChange: (id: Id) => void;
+  /**
+   * Optional click handler for the active-user badge on the right. The App
+   * shell wires this to "switch to the Settings tab" so the user can swap
+   * profiles without hunting for the gear icon.
+   */
+  onUserBadgeClick?: () => void;
 }
 
 export function TopNav<Id extends string>({
   tabs,
   activeTab,
   onTabChange,
+  onUserBadgeClick,
 }: Props<Id>) {
   const mode = useServiceMode();
+  const { currentUser } = useCurrentUserOrNull();
 
   return (
     <header className="flex h-14 flex-shrink-0 items-center gap-6 border-b border-surface-700 bg-surface-900 px-5">
@@ -68,15 +78,38 @@ export function TopNav<Id extends string>({
         })}
       </nav>
 
-      {mode === 'mock' && (
-        <span
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-300"
-          title="De app draait op lokale demo data — geen verbinding met Zoho. Wijzigingen verdwijnen na een reload."
-        >
-          <FlaskConical className="h-3 w-3" />
-          Mock data
-        </span>
-      )}
+      <div className="ml-auto flex items-center gap-3">
+        {mode === 'mock' && (
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-300"
+            title="De app draait op lokale demo data — geen verbinding met Zoho. Wijzigingen verdwijnen na een reload."
+          >
+            <FlaskConical className="h-3 w-3" />
+            Mock data
+          </span>
+        )}
+        {currentUser && (
+          <button
+            type="button"
+            onClick={onUserBadgeClick}
+            disabled={!onUserBadgeClick}
+            className="inline-flex items-center gap-2 rounded-full border border-surface-700 bg-surface-850 px-2.5 py-1 text-xs font-semibold text-slate-200 transition-colors hover:bg-surface-800 disabled:cursor-default disabled:hover:bg-surface-850"
+            title={`Profiel: ${currentUser.name} (${ROLE_LABEL[currentUser.role]})`}
+          >
+            <UserCircle2 className="h-3.5 w-3.5 text-slate-400" />
+            <span className="max-w-[12rem] truncate">{currentUser.name}</span>
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
+                currentUser.role === 'beheer'
+                  ? 'bg-accent/15 text-accent'
+                  : 'bg-surface-800 text-slate-400'
+              }`}
+            >
+              {ROLE_LABEL[currentUser.role]}
+            </span>
+          </button>
+        )}
+      </div>
     </header>
   );
 }

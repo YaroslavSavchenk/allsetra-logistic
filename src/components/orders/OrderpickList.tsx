@@ -23,11 +23,6 @@ export function OrderpickList({ items }: Props) {
               <tr key={`${item.productId}-${idx}`}>
                 <td className="px-4 py-2.5 text-slate-200">
                   {product?.name ?? item.productId}
-                  {!product?.hasIMEI && (
-                    <span className="ml-2 inline-flex rounded border border-surface-600 bg-surface-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-slate-400">
-                      geen IMEI
-                    </span>
-                  )}
                 </td>
                 <td className="px-4 py-2.5 text-right font-mono text-slate-200">
                   {item.quantity}×

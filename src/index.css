@@ -3,6 +3,56 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Theme palettes. The dark theme is the default — applied on `:root` and
+   * also `[data-theme='dark']` so the inline bootstrap script in `index.html`
+   * can be more permissive without ever leaving variables unset.
+   *
+   * The accent palette is tuned per theme: a brighter saffron on dark
+   * backgrounds, a darker amber on light backgrounds (WCAG AA against #fff).
+   */
+  :root,
+  [data-theme='dark'] {
+    --color-surface-950: #0b0f14;
+    --color-surface-900: #0f141b;
+    --color-surface-850: #131925;
+    --color-surface-800: #1a2130;
+    --color-surface-700: #232c3d;
+    --color-surface-600: #2f3a4f;
+    --color-accent: #f59f00;
+    --color-accent-hover: #ffb224;
+    --color-accent-muted: #b7750d;
+
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #94a3b8;
+
+    color-scheme: dark;
+  }
+
+  [data-theme='light'] {
+    /* Inverted surface ramp: 950 (deepest) becomes the lightest page bg,
+       progressively darker through 600 (which is now the hairline border /
+       darkest neutral). This keeps every existing className correct against
+       a light backdrop without per-component refactoring. */
+    --color-surface-950: #f8fafc;
+    --color-surface-900: #ffffff;
+    --color-surface-850: #f1f5f9;
+    --color-surface-800: #e2e8f0;
+    --color-surface-700: #cbd5e1;
+    --color-surface-600: #94a3b8;
+
+    --color-accent: #c97a00;
+    --color-accent-hover: #b56b00;
+    --color-accent-muted: #f59f00;
+
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #334155;
+    --color-text-muted: #64748b;
+
+    color-scheme: light;
+  }
+
   html,
   body,
   #root {
@@ -67,6 +117,43 @@
   .select-text * {
     user-select: text;
     -webkit-user-select: text;
+  }
+
+  /*
+   * Light-theme slate-* re-tinting.
+   *
+   * Components apply `text-slate-100/200/300/400/500` everywhere as their
+   * default-readable foreground colour. Those values are bright greys that
+   * vanish against a light background. Rather than refactor every component
+   * to use semantic tokens, we override the slate-* utilities globally in
+   * light mode — flipping bright greys into dark equivalents so contrast
+   * inverts cleanly.
+   *
+   * Caveats (light mode rough edges to revisit):
+   *   - Only the `text-slate-*` classes are remapped. `bg-slate-*` /
+   *     `border-slate-*` usages keep their original light-grey values; check
+   *     the Sidebar avatar circles, status badges, and any other non-text
+   *     uses if they look off in light mode.
+   *   - `text-slate-50` is treated identically to `text-slate-100`.
+   */
+  [data-theme='light'] .text-slate-50,
+  [data-theme='light'] .text-slate-100 {
+    color: #0f172a;
+  }
+  [data-theme='light'] .text-slate-200 {
+    color: #1e293b;
+  }
+  [data-theme='light'] .text-slate-300 {
+    color: #334155;
+  }
+  [data-theme='light'] .text-slate-400 {
+    color: #475569;
+  }
+  [data-theme='light'] .text-slate-500 {
+    color: #64748b;
+  }
+  [data-theme='light'] .text-slate-600 {
+    color: #94a3b8;
   }
 }
 

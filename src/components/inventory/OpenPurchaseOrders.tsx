@@ -6,6 +6,7 @@ import {
   usePurchaseOrders,
   useReceivePurchaseOrder,
 } from '@/hooks/useInventory';
+import { useHasRole } from '@/contexts/CurrentUserContext';
 import { formatDateTime } from '@/lib/format';
 
 interface Props {
@@ -28,6 +29,7 @@ export function OpenPurchaseOrders({ productId }: Props) {
   const { data: purchaseOrders, isLoading } = usePurchaseOrders();
   const receive = useReceivePurchaseOrder();
   const remove = useDeletePurchaseOrder();
+  const isBeheer = useHasRole('beheer');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const openLines = (purchaseOrders ?? [])
@@ -121,17 +123,21 @@ export function OpenPurchaseOrders({ productId }: Props) {
                 )}
                 Ontvangen
               </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingId(po.id)}
-                disabled={receiveBusy || deleteBusy || isConfirming}
-                aria-label="Inkooporder verwijderen"
-                className="inline-flex items-center justify-center rounded-md p-1.5 text-rose-300 transition-colors hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {/* Trash is beheer-only — wiping a PO is destructive and there
+                  is no undo, so logistiek can receive but not delete. */}
+              {isBeheer && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingId(po.id)}
+                  disabled={receiveBusy || deleteBusy || isConfirming}
+                  aria-label="Inkooporder verwijderen"
+                  className="inline-flex items-center justify-center rounded-md p-1.5 text-rose-300 transition-colors hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
-            {isConfirming && (
+            {isConfirming && isBeheer && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-200">
                 <span>
                   Weet je zeker dat je deze inkooporder wilt verwijderen?

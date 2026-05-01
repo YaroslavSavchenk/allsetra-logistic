@@ -15,6 +15,32 @@
       rel="stylesheet"
     />
     <title>Logistiek Allsetra</title>
+    <!--
+      Resolve the theme before React mounts, so a user on light mode never
+      sees a dark→light flash. Reads `logistiek.theme` from localStorage
+      ('system' | 'light' | 'dark'); when missing or 'system', falls back
+      to the OS preference via prefers-color-scheme. If anything goes
+      wrong, we silently leave the default :root (dark) palette.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('logistiek.theme');
+          var prefersLight = window.matchMedia(
+            '(prefers-color-scheme: light)',
+          ).matches;
+          var resolved =
+            stored === 'light'
+              ? 'light'
+              : stored === 'dark'
+                ? 'dark'
+                : prefersLight
+                  ? 'light'
+                  : 'dark';
+          document.documentElement.setAttribute('data-theme', resolved);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-surface-950 text-slate-100 antialiased">
     <div id="root"></div>

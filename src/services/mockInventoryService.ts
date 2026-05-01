@@ -199,6 +199,16 @@ export class MockInventoryService implements InventoryService {
     }
 
     const inv = this.findOrCreate(productId);
+    // Block manual adjustments that would push the on-hand stock below zero.
+    // The ship flow has its own pre-flight check so it never reaches this
+    // path with a negative outcome — manual adjusts are the only remaining
+    // way to drive opVoorraad below 0, and the user wants that blocked.
+    // Resulting in 0 is allowed (you can zero out a count).
+    if (inv.opVoorraad + delta < 0) {
+      throw new Error(
+        `Voorraad zou onder 0 komen — huidige voorraad is ${inv.opVoorraad}, aanpassing ${delta >= 0 ? '+' : ''}${delta} is niet toegestaan.`,
+      );
+    }
     const ts = nowIso();
     inv.opVoorraad += delta;
     inv.lastMovementAt = ts;
