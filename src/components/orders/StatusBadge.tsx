@@ -9,6 +9,7 @@ const STYLES: Record<OrderStatus, string> = {
   'Ter goedkeuring': 'bg-slate-700/40 text-slate-300 border-slate-600/60',
   Nieuw: 'bg-sky-500/15 text-sky-300 border-sky-400/40',
   'In behandeling': 'bg-amber-500/15 text-amber-300 border-amber-400/40',
+  Ingepakt: 'bg-violet-500/15 text-violet-300 border-violet-400/40',
   Verstuurd: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/40',
 };
 

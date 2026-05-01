@@ -81,6 +81,22 @@ export function useUpdateOrderUnits() {
   });
 }
 
+/**
+ * Flips an order to status `Ingepakt`. Used by the inpakken-stap in the
+ * Orders-tab; the status persists across navigation so the waybill stays
+ * attached to the order instead of relying on local component state.
+ */
+export function useMarkAsPacked() {
+  const qc = useQueryClient();
+  return useMutation<Order, Error, string>({
+    mutationFn: (id) => orderService.markAsPacked(id),
+    onSuccess: (order) => {
+      qc.setQueryData(orderKey(order.id), order);
+      qc.invalidateQueries({ queryKey: OPEN_ORDERS_KEY });
+    },
+  });
+}
+
 export interface ShipOrderInput {
   id: string;
   /** All orderpick items, IMEI and non-IMEI alike. The inventory service

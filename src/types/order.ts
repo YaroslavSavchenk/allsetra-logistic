@@ -2,6 +2,7 @@ export type OrderStatus =
   | 'Ter goedkeuring'
   | 'Nieuw'
   | 'In behandeling'
+  | 'Ingepakt'
   | 'Verstuurd';
 
 /**
@@ -65,7 +66,19 @@ export interface Order {
   units: Unit[];
 }
 
-export const OPEN_STATUSES: OrderStatus[] = ['Nieuw', 'In behandeling'];
+/**
+ * Statuses that the Orders-tab still considers "in progress". Ingepakt is
+ * intentionally included: an Ingepakt order has been physically packed but
+ * not yet shipped, so it stays in the open list until logistics presses
+ * Versturen. The pakbon click flow flips In behandeling/Nieuw to Ingepakt
+ * via `markAsPacked`, and that state survives tab switches/navigations
+ * because it lives on the order, not in component state.
+ */
+export const OPEN_STATUSES: OrderStatus[] = [
+  'Nieuw',
+  'In behandeling',
+  'Ingepakt',
+];
 
 export function isOpen(order: Order): boolean {
   return OPEN_STATUSES.includes(order.status);

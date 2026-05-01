@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Logistiek Allsetra",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "identifier": "nl.allsetra.routeconnect-logistiek",
   "build": {
     "frontendDist": "../dist",

@@ -33,6 +33,10 @@ export const zohoOrderService: OrderService = {
     return invoke<Order>('zoho_update_units', { id, units });
   },
 
+  markAsPacked(id: string) {
+    return invoke<Order>('zoho_pack_order', { id });
+  },
+
   markAsShipped(id: string) {
     return invoke<Order>('zoho_ship_order', { id });
   },

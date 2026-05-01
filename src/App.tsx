@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Boxes, ListChecks, PackageCheck, Settings } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { TopNav, type TabDefinition } from '@/components/TopNav';
@@ -23,11 +23,25 @@ const TABS: ReadonlyArray<TabDefinition<TabId>> = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('orders');
+  // Inventory selection lives at the App root so peripheral surfaces
+  // (LowStockReminder, future deep-links) can drive which product the
+  // Voorraad tab is showing. InventoryTab consumes it as a controlled prop.
+  const [inventorySelectedId, setInventorySelectedId] = useState<string | null>(
+    null,
+  );
   const { currentUser } = useCurrentUserOrNull();
   // Toaster needs to subscribe to theme changes so light-mode users don't get
   // a permanently dark toast surface. `resolvedTheme` is always concrete
   // ('light' | 'dark'), exactly what sonner expects.
   const { resolvedTheme } = useTheme();
+
+  // Switch to the Voorraad tab and focus a specific product. Used by the
+  // LowStockReminder so a click on a low-stock row jumps the user straight
+  // into that product's stock workspace.
+  const navigateToInventoryProduct = useCallback((productId: string) => {
+    setInventorySelectedId(productId);
+    setActiveTab('inventory');
+  }, []);
 
   // Gate the entire app shell behind a profile pick. The picker is rendered
   // full-screen (no TopNav, no tabs) so there is nothing to interact with
@@ -76,14 +90,17 @@ export default function App() {
           <ShippedTab />
         </div>
         <div className={activeTab === 'inventory' ? 'h-full' : 'hidden'}>
-          <InventoryTab />
+          <InventoryTab
+            selectedProductId={inventorySelectedId}
+            onSelectedProductChange={setInventorySelectedId}
+          />
         </div>
         <div className={activeTab === 'settings' ? 'h-full' : 'hidden'}>
           <SettingsTab />
         </div>
       </div>
       <UpdatePrompt />
-      <LowStockReminder />
+      <LowStockReminder onNavigate={navigateToInventoryProduct} />
       <Toaster
         theme={resolvedTheme}
         position="bottom-right"

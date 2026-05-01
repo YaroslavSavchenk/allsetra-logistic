@@ -1,44 +1,65 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Package } from 'lucide-react';
 import { useInventory } from '@/hooks/useInventory';
 import { InventoryTable } from './InventoryTable';
 import { InventoryDetail } from './InventoryDetail';
 
+interface Props {
+  /**
+   * Currently selected product id, or `null` when nothing is picked yet.
+   * Owned by App.tsx so external surfaces (LowStockReminder) can deep-link
+   * into a specific product.
+   */
+  selectedProductId: string | null;
+  /**
+   * Setter the parent passes for both internal selection (clicking a row in
+   * the table) and external navigation. Receives `null` when the current
+   * product disappears from the inventory list.
+   */
+  onSelectedProductChange: (id: string | null) => void;
+}
+
 /**
- * Top-level shell for the Voorraad (inventory) module. Holds the selected
- * product id in local state and renders the product list on the left + the
- * detail workspace on the right.
- *
- * App.tsx mounts this as a single `<InventoryTab />` with no props.
+ * Top-level shell for the Voorraad (inventory) module. Selection state lives
+ * in App.tsx; this component is fully controlled. Renders the product list
+ * on the left + the detail workspace on the right.
  */
-export function InventoryTab() {
+export function InventoryTab({
+  selectedProductId,
+  onSelectedProductChange,
+}: Props) {
   const { data: inventory, isLoading } = useInventory();
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    null,
-  );
 
   // Auto-select the first product once data lands so the right pane has
-  // something useful immediately. Re-selects if the current selection drops
-  // out of the list.
+  // something useful immediately. Also re-selects (or clears) if the current
+  // selection drops out of the list - e.g. after a refresh that removed
+  // the product. Critically, this effect must NOT clobber an externally
+  // set selection: when App calls onSelectedProductChange('rc-eco5') from
+  // the LowStockReminder, that id is in `inventory`, so `stillExists` is
+  // true and we leave it alone.
   useEffect(() => {
     if (!inventory || inventory.length === 0) {
-      if (selectedProductId !== null) setSelectedProductId(null);
+      if (selectedProductId !== null) onSelectedProductChange(null);
+      return;
+    }
+    if (selectedProductId === null) {
+      onSelectedProductChange(inventory[0]!.productId);
       return;
     }
     const stillExists = inventory.some(
       (i) => i.productId === selectedProductId,
     );
     if (!stillExists) {
-      setSelectedProductId(inventory[0]!.productId);
+      onSelectedProductChange(inventory[0]!.productId);
     }
-  }, [inventory, selectedProductId]);
+  }, [inventory, selectedProductId, onSelectedProductChange]);
 
   return (
     <div className="flex h-full w-full bg-surface-950 text-slate-100">
       <InventoryTable
         inventory={inventory ?? []}
         selectedProductId={selectedProductId}
-        onSelect={setSelectedProductId}
+        onSelect={onSelectedProductChange}
         isLoading={isLoading}
       />
       <main className="flex-1 overflow-hidden">

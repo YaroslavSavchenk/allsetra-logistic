@@ -68,6 +68,19 @@ export class MockOrderService implements OrderService {
     return delay(clone(order));
   }
 
+  async markAsPacked(id: string): Promise<Order> {
+    const order = this.orders.find((o) => o.id === id);
+    if (!order) throw new Error(`Order ${id} niet gevonden`);
+    if (order.status === 'Verstuurd') {
+      throw new Error('Order is al verzonden en kan niet opnieuw ingepakt worden');
+    }
+    // Idempotent: re-marking an already-Ingepakt order is a no-op (status
+    // stays the same). This keeps the UI flow simple - clicking Inpakken
+    // again after navigating away just opens the waybill without errors.
+    order.status = 'Ingepakt';
+    return delay(clone(order));
+  }
+
   async markAsShipped(id: string): Promise<Order> {
     const order = this.orders.find((o) => o.id === id);
     if (!order) throw new Error(`Order ${id} niet gevonden`);

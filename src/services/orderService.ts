@@ -33,6 +33,13 @@ export interface OrderService {
   getOpenOrders(): Promise<Order[]>;
   getOrderById(id: string): Promise<Order | null>;
   updateOrderUnits(id: string, units: Unit[]): Promise<Order>;
+  /**
+   * Flip an open order to status `Ingepakt`. No inventory mutation - this is
+   * purely a UI/audit signal that the package has been physically prepped
+   * and the pakbon was generated. Persists across tab switches and app
+   * restarts so logistics doesn't have to re-do the inpakken flow.
+   */
+  markAsPacked(id: string): Promise<Order>;
   markAsShipped(id: string): Promise<Order>;
   /**
    * Create a new logistics-originated order. The service assigns an

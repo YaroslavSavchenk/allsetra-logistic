@@ -70,6 +70,10 @@ export const orderService: OrderService = {
     await resolved;
     return active.updateOrderUnits(id, units);
   },
+  async markAsPacked(id) {
+    await resolved;
+    return active.markAsPacked(id);
+  },
   async markAsShipped(id) {
     await resolved;
     return active.markAsShipped(id);

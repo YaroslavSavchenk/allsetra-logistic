@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Calendar,
-  Eye,
   FileText,
   Loader2,
   MapPin,
   Package,
+  Printer,
   Send,
   User,
   Building2,
@@ -15,6 +15,7 @@ import {
 import type { Order, Unit } from '@/types/order';
 import {
   InsufficientStockError,
+  useMarkAsPacked,
   useOrder,
   useShipOrder,
   useUpdateOrderUnits,
@@ -25,6 +26,7 @@ import { NotesPanel } from './NotesPanel';
 import { OrderpickList } from './OrderpickList';
 import { UnitsTable, computeRowValidations } from './UnitsTable';
 import { WaybillViewer } from '@/components/waybill/WaybillViewer';
+import { buildWaybillHtml } from '@/components/waybill/buildWaybillHtml';
 
 interface Props {
   orderId: string;
@@ -34,24 +36,27 @@ interface Props {
 export function OrderWorkspace({ orderId, onShipped }: Props) {
   const { data: order, isLoading, error } = useOrder(orderId);
   const updateUnits = useUpdateOrderUnits();
+  const markAsPacked = useMarkAsPacked();
   const shipOrder = useShipOrder();
 
   const [units, setUnits] = useState<Unit[]>([]);
   const [dirty, setDirty] = useState(false);
-  // Waybill modal lives at workspace level so the toast action can pop it
-  // open without depending on routing - the order is already in flight to
-  // the Verzonden tab, but we want logistics to print *before* moving on.
+  // Modal viewer is only used by the post-ship toast. The in-workspace
+  // pakbon is rendered inline below — it stays attached to an Ingepakt
+  // order across navigation.
   const [waybillOrder, setWaybillOrder] = useState<Order | null>(null);
-  // `packed` flips to true the first time the user opens the pakbon for the
-  // current order. Versturen is gated behind this - logistics must inspect
-  // the pakbon before shipping. Resets when switching orders.
-  const [packed, setPacked] = useState(false);
+  const inlineWaybillRef = useRef<HTMLIFrameElement>(null);
+
+  // `packed` is now derived from the order's status, which persists on the
+  // server. This way, navigating away and back to an Ingepakt order keeps
+  // the waybill visible and the Versturen button armed - no need to redo
+  // the inpakken-stap.
+  const packed = order?.status === 'Ingepakt';
 
   useEffect(() => {
     if (order) {
       setUnits(order.units);
       setDirty(false);
-      setPacked(false);
     }
     // Reset only when switching to a different order - not on refetch of the
     // same order, which would clobber in-progress edits.
@@ -64,19 +69,50 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
   // have no Units - they're shippable as soon as the order is loaded.
   const allValid = units.length === 0 || validCount === units.length;
 
+  // Pre-render the waybill HTML for the inline iframe. Recompute when the
+  // order content changes; cached otherwise so the iframe srcDoc doesn't
+  // re-mount on every render.
+  const waybillHtml = useMemo(() => {
+    if (!order || !packed) return '';
+    return buildWaybillHtml(order);
+  }, [order, packed]);
+
   const persistUnits = () => {
     if (!order || !dirty) return;
     updateUnits.mutate({ id: order.id, units });
     setDirty(false);
   };
 
-  // Opening the pakbon for the current order also marks it as packed,
-  // unlocking the Versturen button. Reopening from the post-ship toast
-  // (different order id) does not flip the flag of the workspace order.
-  const openWaybillForCurrent = () => {
-    if (!order) return;
-    setWaybillOrder(order);
-    setPacked(true);
+  // Inpakken click: persist the units (defensive in case the user typed an
+  // IMEI and never blurred), flip the order's status to Ingepakt, and let
+  // the inline waybill render itself once the refetch lands.
+  const handlePack = async () => {
+    if (!order || !allValid) return;
+    try {
+      if (dirty) {
+        await updateUnits.mutateAsync({ id: order.id, units });
+      }
+      if (order.status !== 'Ingepakt') {
+        await markAsPacked.mutateAsync(order.id);
+      }
+    } catch (e) {
+      toast.error('Inpakken mislukt', {
+        description: e instanceof Error ? e.message : 'Onbekende fout',
+      });
+    }
+  };
+
+  // Print the inline waybill via the iframe's own contentWindow. Same
+  // mechanism as the modal viewer.
+  const handlePrintWaybill = () => {
+    const iframe = inlineWaybillRef.current;
+    if (!iframe) return;
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch (err) {
+      console.warn('Pakbon: print mislukt', err);
+    }
   };
 
   const handleShip = async () => {
@@ -146,6 +182,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
   }
 
   const shipping = shipOrder.isPending || updateUnits.isPending;
+  const packing = markAsPacked.isPending || updateUnits.isPending;
 
   return (
     <div className="scroll-thin flex h-full flex-col overflow-y-auto bg-surface-900">
@@ -215,19 +252,28 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
 
         {packed && (
           <section>
-            <SectionHeader icon={FileText} title="Pakbon" />
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-surface-700 bg-surface-850 px-4 py-4">
-              <div className="text-sm text-slate-300">
-                Pakbon is klaar - voeg hem toe aan het verzendpakket.
-              </div>
+            <div className="mb-2 flex items-center justify-between gap-4">
+              <SectionHeader icon={FileText} title="Pakbon" />
               <button
                 type="button"
-                onClick={openWaybillForCurrent}
-                className="inline-flex items-center gap-2 rounded-md border border-surface-600 bg-surface-800 px-4 py-2 text-sm font-semibold text-slate-100 transition-colors hover:bg-surface-700"
+                onClick={handlePrintWaybill}
+                className="inline-flex items-center gap-2 rounded-md border border-surface-600 bg-surface-800 px-3 py-1.5 text-xs font-semibold text-slate-100 transition-colors hover:bg-surface-700"
               >
-                <Eye className="h-4 w-4" />
-                Pakbon openen
+                <Printer className="h-3.5 w-3.5" />
+                Printen
               </button>
+            </div>
+            <p className="mb-2 text-xs text-slate-400">
+              Pakbon is klaar. Voeg hem toe aan het verzendpakket. Kies in het
+              printvenster "Microsoft Print to PDF" om als PDF op te slaan.
+            </p>
+            <div className="overflow-hidden rounded-lg border border-surface-700 bg-white">
+              <iframe
+                ref={inlineWaybillRef}
+                title={`Pakbon ${order.orderNumber}`}
+                srcDoc={waybillHtml}
+                className="block h-[700px] w-full border-0"
+              />
             </div>
           </section>
         )}
@@ -240,17 +286,17 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
               ? `${validCount}/${units.length} units klaar - vul de overige IMEI's in om in te pakken.`
               : !packed
                 ? units.length === 0
-                  ? 'Geen IMEI-producten - open de pakbon en pak in.'
-                  : 'Alle units gecontroleerd - open de pakbon en pak in.'
-                : 'Pakbon gegenereerd - klaar om te versturen.'}
+                  ? 'Geen IMEI-producten - klaar om in te pakken.'
+                  : 'Alle units gecontroleerd - klaar om in te pakken.'
+                : 'Pakbon staat klaar - klaar om te versturen.'}
           </div>
           <button
             type="button"
-            onClick={packed ? handleShip : openWaybillForCurrent}
-            disabled={!allValid || shipping}
+            onClick={packed ? handleShip : handlePack}
+            disabled={!allValid || shipping || packing}
             className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-surface-950 shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-surface-700 disabled:text-slate-500"
           >
-            {shipping ? (
+            {shipping || packing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : packed ? (
               <Send className="h-4 w-4" />
