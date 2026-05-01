@@ -53,15 +53,17 @@ jobs:
           ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
           ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
           # Optional overrides — leave unset to use built-in defaults
-          # (EU sandbox, module "RouteConnectOrders_test").
+          # (EU sandbox, orders module "RouteConnectOrders_test", products
+          # module "Products").
           ZOHO_API_BASE: ${{ secrets.ZOHO_API_BASE }}
           ZOHO_ACCOUNTS_URL: ${{ secrets.ZOHO_ACCOUNTS_URL }}
           ZOHO_MODULE: ${{ secrets.ZOHO_MODULE }}
+          ZOHO_PRODUCTS_MODULE: ${{ secrets.ZOHO_PRODUCTS_MODULE }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'RouteConnect Logistiek ${{ github.ref_name }}'
+          releaseName: 'Logistiek Allsetra ${{ github.ref_name }}'
           releaseBody: |
-            Windows installer voor RouteConnect Logistiek.
+            Windows installer voor Logistiek Allsetra.
 
             Download het `.msi` of `.exe` bestand hieronder en installeer.
             Auto-update zorgt daarna dat je altijd de laatste versie hebt —
