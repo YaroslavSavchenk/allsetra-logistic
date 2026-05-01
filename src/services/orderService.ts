@@ -1,4 +1,20 @@
-import type { Order, Unit } from '@/types/order';
+import type { Order, OrderpickItem, Unit } from '@/types/order';
+
+/**
+ * Draft used by `createOrder` — the minimal fields logistics fills in when
+ * making a manual order. The service generates the id, ordernumber, status,
+ * timestamp, source, quote owner and (for IMEI products) the Units.
+ */
+export interface OrderDraft {
+  /** Free-text recipient label (person, company, internal team). */
+  recipient: string;
+  address: string;
+  postcode: string;
+  city: string;
+  /** Optional internal note attached as an OrderNote. */
+  note?: string;
+  orderpick: OrderpickItem[];
+}
 
 /**
  * Interface that abstracts order persistence. Components depend on this, not
@@ -10,4 +26,13 @@ export interface OrderService {
   getOrderById(id: string): Promise<Order | null>;
   updateOrderUnits(id: string, units: Unit[]): Promise<Order>;
   markAsShipped(id: string): Promise<Order>;
+  /**
+   * Create a new logistics-originated order. The service assigns an
+   * LCO-prefixed ordernumber, sets `source: 'logistics'`, and auto-generates
+   * Units for every IMEI-bearing product line.
+   *
+   * TODO: when Zoho integration goes live, decide whether logistics-created
+   * orders should also be pushed into Zoho or stay local-only.
+   */
+  createOrder(draft: OrderDraft): Promise<Order>;
 }

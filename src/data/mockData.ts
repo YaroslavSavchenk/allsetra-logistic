@@ -11,16 +11,17 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-22T09:15:00',
     quoteOwner: 'Marieke Jansen',
+    source: 'zoho',
     notes: [],
     orderpick: [
-      { product: 'RouteConnect HCV5-Lite', quantity: 4, note: '' },
-      { product: 'ID Reader', quantity: 4, note: '' },
+      { productId: 'rc-hcv5-lite', quantity: 4, note: '' },
+      { productId: 'acc-id-reader', quantity: 4, note: '' },
     ],
     units: [
-      { id: 'u1', imei: '', type: 'HCV5-Lite' },
-      { id: 'u2', imei: '', type: 'HCV5-Lite' },
-      { id: 'u3', imei: '', type: 'HCV5-Lite' },
-      { id: 'u4', imei: '', type: 'HCV5-Lite' },
+      { id: 'u1', imei: '', productId: 'rc-hcv5-lite' },
+      { id: 'u2', imei: '', productId: 'rc-hcv5-lite' },
+      { id: 'u3', imei: '', productId: 'rc-hcv5-lite' },
+      { id: 'u4', imei: '', productId: 'rc-hcv5-lite' },
     ],
   },
   {
@@ -33,6 +34,7 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-22T14:42:00',
     quoteOwner: 'Pieter Bakker',
+    source: 'zoho',
     notes: [
       {
         id: 'n_snn_1',
@@ -43,8 +45,8 @@ export const MOCK_ORDERS: Order[] = [
         modifiedAt: null,
       },
     ],
-    orderpick: [{ product: 'RouteConnect Eco5', quantity: 1, note: '' }],
-    units: [{ id: 'u1', imei: '', type: 'Eco5' }],
+    orderpick: [{ productId: 'rc-eco5', quantity: 1, note: '' }],
+    units: [{ id: 'u1', imei: '', productId: 'rc-eco5' }],
   },
   {
     id: 'zcrm_003',
@@ -56,19 +58,20 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-23T08:05:00',
     quoteOwner: 'Sanne Visser',
+    source: 'zoho',
     notes: [],
     orderpick: [
-      { product: 'RouteConnect Smart5', quantity: 2, note: '' },
-      { product: 'RouteConnect HCV5-Lite', quantity: 3, note: '' },
-      { product: 'ID Reader', quantity: 5, note: '' },
-      { product: 'Buzzer', quantity: 2, note: 'Luide variant' },
+      { productId: 'rc-smart5', quantity: 2, note: '' },
+      { productId: 'rc-hcv5-lite', quantity: 3, note: '' },
+      { productId: 'acc-id-reader', quantity: 5, note: '' },
+      { productId: 'acc-buzzer', quantity: 2, note: 'Luide variant' },
     ],
     units: [
-      { id: 'u1', imei: '', type: 'Smart5' },
-      { id: 'u2', imei: '', type: 'Smart5' },
-      { id: 'u3', imei: '', type: 'HCV5-Lite' },
-      { id: 'u4', imei: '', type: 'HCV5-Lite' },
-      { id: 'u5', imei: '', type: 'HCV5-Lite' },
+      { id: 'u1', imei: '', productId: 'rc-smart5' },
+      { id: 'u2', imei: '', productId: 'rc-smart5' },
+      { id: 'u3', imei: '', productId: 'rc-hcv5-lite' },
+      { id: 'u4', imei: '', productId: 'rc-hcv5-lite' },
+      { id: 'u5', imei: '', productId: 'rc-hcv5-lite' },
     ],
   },
   {
@@ -81,6 +84,7 @@ export const MOCK_ORDERS: Order[] = [
     status: 'Nieuw',
     createdAt: '2026-04-23T11:28:00',
     quoteOwner: 'Marieke Jansen',
+    source: 'zoho',
     notes: [
       {
         id: 'n_vrm_1',
@@ -101,15 +105,15 @@ export const MOCK_ORDERS: Order[] = [
     ],
     orderpick: [
       {
-        product: 'RouteConnect Smart5',
+        productId: 'rc-smart5',
         quantity: 3,
         note: 'Custom APN vereist',
       },
     ],
     units: [
-      { id: 'u1', imei: '', type: 'Smart5' },
-      { id: 'u2', imei: '', type: 'Smart5' },
-      { id: 'u3', imei: '', type: 'Smart5' },
+      { id: 'u1', imei: '', productId: 'rc-smart5' },
+      { id: 'u2', imei: '', productId: 'rc-smart5' },
+      { id: 'u3', imei: '', productId: 'rc-smart5' },
     ],
   },
   {
@@ -123,6 +127,7 @@ export const MOCK_ORDERS: Order[] = [
     status: 'In behandeling',
     createdAt: '2026-04-23T15:50:00',
     quoteOwner: 'Pieter Bakker',
+    source: 'zoho',
     notes: [
       {
         id: 'n_tmc_1',
@@ -134,13 +139,42 @@ export const MOCK_ORDERS: Order[] = [
       },
     ],
     orderpick: [
-      { product: 'RouteConnect Eco5', quantity: 3, note: '' },
-      { product: 'ID Reader', quantity: 3, note: '' },
+      { productId: 'rc-eco5', quantity: 3, note: '' },
+      { productId: 'acc-id-reader', quantity: 3, note: '' },
     ],
     units: [
-      { id: 'u1', imei: '861234567890123', type: 'Eco5' },
-      { id: 'u2', imei: '863712345678901', type: 'Eco5' },
-      { id: 'u3', imei: '', type: 'Eco5' },
+      { id: 'u1', imei: '861234567890123', productId: 'rc-eco5' },
+      { id: 'u2', imei: '863712345678901', productId: 'rc-eco5' },
+      { id: 'u3', imei: '', productId: 'rc-eco5' },
     ],
+  },
+  // Non-RouteConnect family — IMEI-loze producten doorlopen de orderpick
+  // zonder Units en worden bij verzending alleen op aantal afgeschreven.
+  {
+    id: 'zcrm_006',
+    orderNumber: 'RCO-0047',
+    account: 'Stadsfietsverhuur Amsterdam',
+    address: 'Damrak 22',
+    postcode: '1012 LJ',
+    city: 'Amsterdam',
+    status: 'Nieuw',
+    createdAt: '2026-04-24T10:30:00',
+    quoteOwner: 'Sanne Visser',
+    source: 'zoho',
+    notes: [
+      {
+        id: 'n_sva_1',
+        author: 'Sanne Visser',
+        content:
+          'Verhuurseizoen begint volgende week — graag deze week nog versturen.',
+        createdAt: '2026-04-24T10:32:00',
+        modifiedAt: null,
+      },
+    ],
+    orderpick: [
+      { productId: 'bs-bike-lock-pro', quantity: 10, note: '' },
+      { productId: 'bs-helmet-reflector', quantity: 25, note: '' },
+    ],
+    units: [],
   },
 ];

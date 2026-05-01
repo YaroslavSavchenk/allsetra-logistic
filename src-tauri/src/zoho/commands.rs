@@ -71,7 +71,10 @@ pub async fn zoho_update_units(
         .map(|u| {
             json!({
                 config::UNIT_FIELD_IMEI: u.imei,
-                config::UNIT_FIELD_TYPE: u.type_,
+                // TODO: write the Zoho-side device-type string here once the
+                // product registry is plumbed through; for now we just echo
+                // back the product id we received.
+                config::UNIT_FIELD_TYPE: u.product_id,
             })
         })
         .collect();
@@ -81,6 +84,49 @@ pub async fn zoho_update_units(
     let _: Value = client.put(&path, body).await?;
 
     fetch_order_impl(&id, client.inner().as_ref()).await
+}
+
+/// Fetch the full Products catalogue from Zoho. Pulled once and cached on
+/// the JS side via TanStack Query — the result is non-volatile (Zoho admins
+/// add a new product maybe weekly), so a long staleTime is fine.
+///
+/// Filters to active products only (`Product_Active = true`) so de-listed
+/// items don't clutter the picker.
+#[tauri::command]
+pub async fn zoho_fetch_products(
+    client: State<'_, Arc<ZohoClient>>,
+) -> Result<Vec<Product>, ZohoError> {
+    let path = format!(
+        "/crm/v8/{module}?fields={fields}&per_page=200",
+        module = config::products_module(),
+        fields = [
+            config::PRODUCT_FIELD_NAME,
+            config::PRODUCT_FIELD_CODE,
+            config::PRODUCT_FIELD_CATEGORY,
+            config::PRODUCT_FIELD_VENDOR,
+            config::PRODUCT_FIELD_ACTIVE,
+        ]
+        .join(","),
+    );
+
+    let response: Value = client.get(&path).await?;
+    let items = response
+        .get("data")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    Ok(items
+        .iter()
+        .filter(|raw| {
+            // Only active products. Zoho returns booleans as JSON true/false
+            // but some envs use the string "true" — accept both.
+            raw.get(config::PRODUCT_FIELD_ACTIVE)
+                .map(|v| v.as_bool().unwrap_or_else(|| v.as_str() == Some("true")))
+                .unwrap_or(true)
+        })
+        .map(mapper::json_to_product)
+        .collect())
 }
 
 #[tauri::command]

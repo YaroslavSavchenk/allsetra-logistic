@@ -1,46 +1,27 @@
-import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/Sidebar';
-import { OrderWorkspace } from '@/components/OrderWorkspace';
-import { EmptyState } from '@/components/EmptyState';
+import { useState } from 'react';
+import { Boxes, ListChecks } from 'lucide-react';
+import { TopNav, type TabDefinition } from '@/components/TopNav';
+import { OrdersTab } from '@/components/orders/OrdersTab';
+import { InventoryTab } from '@/components/inventory/InventoryTab';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
-import { useOpenOrders } from '@/hooks/useOrders';
+
+type TabId = 'orders' | 'inventory';
+
+const TABS: ReadonlyArray<TabDefinition<TabId>> = [
+  { id: 'orders', label: 'Orders', icon: ListChecks },
+  { id: 'inventory', label: 'Voorraad', icon: Boxes },
+];
 
 export default function App() {
-  const { data: orders, isLoading } = useOpenOrders();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!orders || orders.length === 0) {
-      if (selectedId !== null) setSelectedId(null);
-      return;
-    }
-    const stillExists = orders.some((o) => o.id === selectedId);
-    if (!stillExists) {
-      setSelectedId(orders[0]!.id);
-    }
-  }, [orders, selectedId]);
-
-  const handleShipped = () => {
-    if (!orders) return;
-    const remaining = orders.filter((o) => o.id !== selectedId);
-    setSelectedId(remaining[0]?.id ?? null);
-  };
+  const [activeTab, setActiveTab] = useState<TabId>('orders');
 
   return (
-    <div className="flex h-full w-full bg-surface-950 text-slate-100">
-      <Sidebar
-        orders={orders ?? []}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        isLoading={isLoading}
-      />
-      <main className="flex-1 overflow-hidden">
-        {selectedId ? (
-          <OrderWorkspace orderId={selectedId} onShipped={handleShipped} />
-        ) : (
-          <EmptyState />
-        )}
-      </main>
+    <div className="flex h-full w-full flex-col bg-surface-950 text-slate-100">
+      <TopNav tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'orders' && <OrdersTab />}
+        {activeTab === 'inventory' && <InventoryTab />}
+      </div>
       <UpdatePrompt />
     </div>
   );

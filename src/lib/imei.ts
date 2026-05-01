@@ -1,25 +1,14 @@
-import type { DeviceType } from '@/types/order';
+import { detectProductFromImei, getProduct } from './productStrategy';
 
 export const IMEI_LENGTH = 15;
-
-export function detectDeviceType(imei: string): DeviceType | null {
-  if (!/^\d+$/.test(imei)) return null;
-
-  // Longest prefixes first so 8637/8635 match before 861/864.
-  if (imei.startsWith('8637')) return 'Eco5';
-  if (imei.startsWith('8635')) return 'HCV5-Lite';
-  if (imei.startsWith('861')) return 'Eco5';
-  if (imei.startsWith('864')) return 'Smart5';
-  return null;
-}
 
 export type ImeiValidation =
   | { state: 'empty' }
   | { state: 'invalid'; reason: string }
-  | { state: 'valid'; detectedType: DeviceType };
+  | { state: 'valid'; detectedProductId: string };
 
 export interface ValidationContext {
-  expectedType: DeviceType;
+  expectedProductId: string;
   otherImeis: string[];
 }
 
@@ -42,18 +31,20 @@ export function validateImei(
     };
   }
 
-  const detectedType = detectDeviceType(imei);
-  if (!detectedType) {
+  const detectedProductId = detectProductFromImei(imei);
+  if (!detectedProductId) {
     return {
       state: 'invalid',
-      reason: 'Onbekende IMEI prefix — geen RouteConnect device',
+      reason: 'Onbekende IMEI prefix — geen herkend product',
     };
   }
 
-  if (detectedType !== ctx.expectedType) {
+  if (detectedProductId !== ctx.expectedProductId) {
+    const expectedName = getProduct(ctx.expectedProductId)?.name ?? ctx.expectedProductId;
+    const detectedName = getProduct(detectedProductId)?.name ?? detectedProductId;
     return {
       state: 'invalid',
-      reason: `Verwacht ${ctx.expectedType}, is ${detectedType}`,
+      reason: `Verwacht ${expectedName}, is ${detectedName}`,
     };
   }
 
@@ -64,7 +55,7 @@ export function validateImei(
     };
   }
 
-  return { state: 'valid', detectedType };
+  return { state: 'valid', detectedProductId };
 }
 
 export function isImeiComplete(validation: ImeiValidation): boolean {

@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "RouteConnect Logistiek",
+  "productName": "Logistiek Allsetra",
   "version": "0.1.0",
   "identifier": "nl.allsetra.routeconnect-logistiek",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "RouteConnect Logistiek",
+        "title": "Logistiek Allsetra",
         "width": 1400,
         "height": 900,
         "minWidth": 1100,
@@ -31,8 +31,8 @@
     "active": true,
     "targets": "all",
     "category": "Productivity",
-    "shortDescription": "RouteConnect logistiek werkomgeving",
-    "longDescription": "Interne tool voor het prepen en verzenden van RouteConnect tracking devices.",
+    "shortDescription": "Allsetra logistiek werkomgeving",
+    "longDescription": "Interne tool voor het Allsetra logistiek team — RouteConnect trackers, accessoires, fietsbeveiliging en sensors prepen en verzenden, plus voorraadbeheer.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

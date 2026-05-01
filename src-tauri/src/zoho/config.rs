@@ -41,6 +41,12 @@ pub fn module() -> &'static str {
     option_env!("ZOHO_MODULE").unwrap_or("RouteConnectOrders_test")
 }
 
+/// Zoho Products module — standard module is `Products`. Override via
+/// `ZOHO_PRODUCTS_MODULE` build-time env var if a custom module is used.
+pub fn products_module() -> &'static str {
+    option_env!("ZOHO_PRODUCTS_MODULE").unwrap_or("Products")
+}
+
 // ─── Field API names ─────────────────────────────────────────────────────────
 //
 // Best-guess mappings from the project plan. **Confirm each against the
@@ -72,6 +78,14 @@ pub const NOTE_FIELD_CONTENT: &str = "Note_Content";
 pub const NOTE_FIELD_CREATED_BY: &str = "Created_By";
 pub const NOTE_FIELD_CREATED_AT: &str = "Created_Time";
 pub const NOTE_FIELD_MODIFIED_AT: &str = "Modified_Time";
+
+// Products module fields. Standard Zoho Products module names — override via
+// constants below if your module uses different API names.
+pub const PRODUCT_FIELD_NAME: &str = "Product_Name";
+pub const PRODUCT_FIELD_CODE: &str = "Product_Code";
+pub const PRODUCT_FIELD_CATEGORY: &str = "Product_Category";
+pub const PRODUCT_FIELD_VENDOR: &str = "Vendor_Name";
+pub const PRODUCT_FIELD_ACTIVE: &str = "Product_Active";
 
 // ─── Status picklist values (exact spelling) ────────────────────────────────
 

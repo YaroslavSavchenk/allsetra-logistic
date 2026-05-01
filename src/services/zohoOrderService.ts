@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Order, Unit } from '@/types/order';
-import type { OrderService } from './orderService';
+import type { OrderDraft, OrderService } from './orderService';
 
 /**
  * Calls out to the Rust-side Zoho client via Tauri commands. The Rust side
@@ -31,6 +31,20 @@ export const zohoOrderService: OrderService = {
 
   markAsShipped(id: string) {
     return invoke<Order>('zoho_ship_order', { id });
+  },
+
+  // TODO: decide with sales whether logistics-created orders should be
+  // pushed into Zoho (visible in CRM, full audit) or stay local-only. Until
+  // that decision is made, fail fast in live mode so we don't silently lose
+  // data — logistics will see the error and know not to use the feature
+  // until it's wired.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  createOrder(_draft: OrderDraft): Promise<Order> {
+    return Promise.reject(
+      new Error(
+        'Logistiek-orders maken is nog niet beschikbaar in Zoho-modus — schakel eerst de mock back-end in of vraag de Zoho-push-flow aan.',
+      ),
+    );
   },
 };
 

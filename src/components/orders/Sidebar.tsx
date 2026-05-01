@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, Truck, Loader2 } from 'lucide-react';
+import { Plus, Search, Loader2 } from 'lucide-react';
 import type { Order } from '@/types/order';
 import { StatusBadge } from './StatusBadge';
 
@@ -8,13 +8,27 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   isLoading: boolean;
+  /** Set when the workspace is in "new-order" mode so the row gets a highlight. */
+  isCreating?: boolean;
+  onCreateClick?: () => void;
 }
 
 function filledCount(order: Order): number {
   return order.units.filter((u) => u.imei.trim().length > 0).length;
 }
 
-export function Sidebar({ orders, selectedId, onSelect, isLoading }: Props) {
+function pickQuantity(order: Order): number {
+  return order.orderpick.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+export function Sidebar({
+  orders,
+  selectedId,
+  onSelect,
+  isLoading,
+  isCreating,
+  onCreateClick,
+}: Props) {
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -30,18 +44,6 @@ export function Sidebar({ orders, selectedId, onSelect, isLoading }: Props) {
 
   return (
     <aside className="flex w-80 flex-shrink-0 flex-col border-r border-surface-700 bg-surface-900">
-      <div className="flex items-center gap-2 border-b border-surface-700 px-5 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
-          <Truck className="h-4 w-4" />
-        </div>
-        <div className="flex-1">
-          <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-            RouteConnect
-          </div>
-          <div className="text-sm font-semibold text-slate-100">Logistiek</div>
-        </div>
-      </div>
-
       <div className="border-b border-surface-700 px-4 py-3">
         <div className="mb-2 flex items-baseline justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -61,6 +63,20 @@ export function Sidebar({ orders, selectedId, onSelect, isLoading }: Props) {
             className="w-full rounded-md border border-surface-700 bg-surface-850 py-2 pl-8 pr-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-accent/60"
           />
         </div>
+        {onCreateClick && (
+          <button
+            type="button"
+            onClick={onCreateClick}
+            className={`mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold transition-colors ${
+              isCreating
+                ? 'border-accent/60 bg-accent/15 text-accent'
+                : 'border-surface-700 bg-surface-850 text-slate-200 hover:border-accent/40 hover:bg-surface-800 hover:text-accent'
+            }`}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nieuwe order
+          </button>
+        )}
       </div>
 
       <div className="scroll-thin flex-1 overflow-y-auto">
@@ -99,6 +115,8 @@ interface RowProps {
 function OrderRow({ order, isSelected, onClick }: RowProps) {
   const filled = filledCount(order);
   const total = order.units.length;
+  const counter =
+    total > 0 ? `${filled}/${total} units` : `${pickQuantity(order)} items`;
 
   return (
     <li>
@@ -123,9 +141,7 @@ function OrderRow({ order, isSelected, onClick }: RowProps) {
         <div className="truncate text-sm text-slate-300">{order.account}</div>
         <div className="flex items-center justify-between text-xs text-slate-500">
           <span>{order.city}</span>
-          <span className="font-mono">
-            {filled}/{total} units
-          </span>
+          <span className="font-mono">{counter}</span>
         </div>
       </button>
     </li>

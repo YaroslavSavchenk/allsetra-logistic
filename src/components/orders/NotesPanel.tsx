@@ -1,13 +1,24 @@
 import { AlertTriangle, User, Clock } from 'lucide-react';
-import type { OrderNote } from '@/types/order';
+import type { OrderNote, OrderSource } from '@/types/order';
 import { formatDateTime } from '@/lib/format';
 
 interface Props {
   notes: OrderNote[];
+  /**
+   * Drives the panel header. Sales-originated orders show "Notitie van
+   * sales" so logistics treats it as a hand-off message; logistics-created
+   * orders just show "Interne notitie" so we don't lie about the author.
+   */
+  source: OrderSource;
 }
 
-export function NotesPanel({ notes }: Props) {
+export function NotesPanel({ notes, source }: Props) {
   if (notes.length === 0) return null;
+
+  const headerLabel = (() => {
+    if (notes.length > 1) return `Notities (${notes.length})`;
+    return source === 'logistics' ? 'Interne notitie' : 'Notitie van sales';
+  })();
 
   return (
     <div
@@ -17,9 +28,7 @@ export function NotesPanel({ notes }: Props) {
       <header className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2">
         <AlertTriangle className="h-4 w-4 text-amber-400" />
         <span className="text-xs font-semibold uppercase tracking-wider text-amber-300">
-          {notes.length === 1
-            ? 'Notitie van sales'
-            : `Notities (${notes.length})`}
+          {headerLabel}
         </span>
       </header>
       <ul className="divide-y divide-amber-500/20">

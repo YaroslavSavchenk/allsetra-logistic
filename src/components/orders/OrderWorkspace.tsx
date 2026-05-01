@@ -46,7 +46,9 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
 
   const validations = useMemo(() => computeRowValidations(units), [units]);
   const validCount = validations.filter((v) => v.validation.state === 'valid').length;
-  const allValid = units.length > 0 && validCount === units.length;
+  // Orders without IMEI products (bike-security, sensors, accessoire-only)
+  // have no Units — they're shippable as soon as the order is loaded.
+  const allValid = units.length === 0 || validCount === units.length;
 
   const persistUnits = () => {
     if (!order || !dirty) return;
@@ -58,10 +60,27 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
     if (!order || !allValid) return;
     try {
       await updateUnits.mutateAsync({ id: order.id, units });
-      const shipped = await shipOrder.mutateAsync(order.id);
-      toast.success(`${shipped.orderNumber} verzonden`, {
-        description: `${shipped.account} — ${shipped.units.length} units`,
+      const picks = order.orderpick.map((p) => ({
+        productId: p.productId,
+        qty: p.quantity,
+      }));
+      const { order: shipped, negatives } = await shipOrder.mutateAsync({
+        id: order.id,
+        picks,
       });
+      const unitsCount = shipped.units.length;
+      const itemsCount = picks.reduce((sum, p) => sum + p.qty, 0);
+      toast.success(`${shipped.orderNumber} verzonden`, {
+        description:
+          unitsCount > 0
+            ? `${shipped.account} — ${unitsCount} units`
+            : `${shipped.account} — ${itemsCount} items`,
+      });
+      if (negatives.length > 0) {
+        toast.warning('Voorraad nu negatief', {
+          description: `${negatives.length} product(en) onder 0 — controleer telling.`,
+        });
+      }
       onShipped();
     } catch (e) {
       toast.error('Versturen mislukt', {
@@ -118,7 +137,7 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
       </header>
 
       <div className="flex-1 space-y-6 px-8 py-6">
-        <NotesPanel notes={order.notes} />
+        <NotesPanel notes={order.notes} source={order.source} />
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           <div>
@@ -137,31 +156,35 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
           </div>
         </section>
 
-        <section>
-          <div className="mb-2 flex items-baseline justify-between">
-            <SectionHeader title="Units — IMEI invoeren" />
-            <span className="font-mono text-xs text-slate-400">
-              {validCount}/{units.length} geldig
-            </span>
-          </div>
-          <UnitsTable
-            units={units}
-            disabled={shipping}
-            onUnitsChange={(next) => {
-              setUnits(next);
-              setDirty(true);
-            }}
-            onBlur={persistUnits}
-          />
-        </section>
+        {units.length > 0 && (
+          <section>
+            <div className="mb-2 flex items-baseline justify-between">
+              <SectionHeader title="Units — IMEI invoeren" />
+              <span className="font-mono text-xs text-slate-400">
+                {validCount}/{units.length} geldig
+              </span>
+            </div>
+            <UnitsTable
+              units={units}
+              disabled={shipping}
+              onUnitsChange={(next) => {
+                setUnits(next);
+                setDirty(true);
+              }}
+              onBlur={persistUnits}
+            />
+          </section>
+        )}
       </div>
 
       <footer className="sticky bottom-0 border-t border-surface-700 bg-surface-900/95 px-8 py-4 backdrop-blur">
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm text-slate-400">
-            {allValid
-              ? 'Alle units gecontroleerd — klaar om te versturen.'
-              : `${validCount}/${units.length} units klaar — vul de overige IMEI's in om te versturen.`}
+            {units.length === 0
+              ? 'Geen IMEI-producten in deze order — klaar om te versturen.'
+              : allValid
+                ? 'Alle units gecontroleerd — klaar om te versturen.'
+                : `${validCount}/${units.length} units klaar — vul de overige IMEI's in om te versturen.`}
           </div>
           <button
             type="button"
@@ -174,7 +197,9 @@ export function OrderWorkspace({ orderId, onShipped }: Props) {
             ) : (
               <Send className="h-4 w-4" />
             )}
-            Versturen ({validCount}/{units.length})
+            {units.length === 0
+              ? 'Versturen'
+              : `Versturen (${validCount}/${units.length})`}
           </button>
         </div>
       </footer>

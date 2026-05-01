@@ -2,6 +2,7 @@ import { useMemo, useRef, type KeyboardEvent } from 'react';
 import { Check, X, CircleDashed } from 'lucide-react';
 import type { Unit } from '@/types/order';
 import { IMEI_LENGTH, validateImei, type ImeiValidation } from '@/lib/imei';
+import { getProduct, getProductName } from '@/lib/productStrategy';
 
 interface Props {
   units: Unit[];
@@ -28,7 +29,7 @@ export function computeRowValidations(units: Unit[]): RowValidation[] {
     return {
       unitId: unit.id,
       validation: validateImei(unit.imei, {
-        expectedType: unit.type,
+        expectedProductId: unit.productId,
         otherImeis,
       }),
     };
@@ -145,7 +146,7 @@ function UnitRow({
       </td>
       <td className="px-4 py-2.5 align-top">
         <span className="inline-flex rounded border border-surface-600 bg-surface-800 px-2 py-1 font-mono text-xs text-slate-200">
-          {unit.type}
+          {getProduct(unit.productId)?.name ?? unit.productId}
         </span>
       </td>
       <td className="px-4 py-2.5 align-top">
@@ -170,7 +171,7 @@ function UnitRow({
         )}
         {validation.state === 'valid' && (
           <p className="mt-1 text-xs text-emerald-300">
-            Herkend als {validation.detectedType}
+            Herkend als {getProductName(validation.detectedProductId)}
           </p>
         )}
       </td>

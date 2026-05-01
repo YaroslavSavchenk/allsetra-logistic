@@ -24,6 +24,7 @@ pub fn run() {
             zoho::commands::zoho_is_configured,
             zoho::commands::zoho_fetch_open_orders,
             zoho::commands::zoho_fetch_order,
+            zoho::commands::zoho_fetch_products,
             zoho::commands::zoho_update_units,
             zoho::commands::zoho_ship_order,
         ])

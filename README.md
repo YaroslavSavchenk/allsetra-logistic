@@ -1,13 +1,28 @@
-# RouteConnect Logistiek
+# Logistiek Allsetra
 
-Interne desktop-applicatie voor het logistiek team van Allsetra. Hier prepen
-medewerkers RouteConnect tracking-devices (Eco5, HCV5-Lite, Smart5): IMEI's
-invullen, valideren, en de order als verstuurd markeren. Orderbron is Zoho CRM
-— deze app is een gefocuste werkomgeving die alleen toont wat voor logistiek
-relevant is.
+Interne desktop-applicatie voor het logistiek team van Allsetra. De app is
+gestart als IMEI-flow voor RouteConnect tracking-devices (Eco5, HCV5-Lite,
+Smart5) en doet inmiddels alle logistiek: tracker-orders met IMEI's, plus
+productlijnen zonder IMEI (accessoires, fietsbeveiliging, sensors). Twee
+tabs bovenaan: **Orders** (klantorders prepen + versturen, óf zelf een
+order aanmaken voor ad-hoc verzendingen) en **Voorraad** (per product de
+stand, openstaande inkooporders en mutatiehistorie).
+
+Twee orderstromen:
+
+- **Sales-orders** komen uit Zoho CRM — sales maakt de quote, logistiek ziet
+  de open orders zodra ze status `Nieuw` hebben.
+- **Logistiek-orders** maakt het team zelf via "**+ Nieuwe order**" in de
+  Orders-sidebar — voor verzendingen zonder sales-quote (interne overdracht,
+  spoed, alleen accessoires). Krijgen een `LCO-…` nummer en lopen daarna
+  precies dezelfde flow als sales-orders.
+
+De productlijst voor de picker komt uit de Zoho Products module (live mode)
+of uit de lokale productregistratie (mock mode); de UI is hetzelfde.
 
 > **Status: prototype.** De app draait op mock data. De Zoho CRM-integratie
-> komt in een volgende fase — de servicelaag is er al op ingericht.
+> (orders) komt in een volgende fase — de servicelaag is er al op ingericht.
+> De voorraadkant heeft geen Zoho-tegenhanger op dit moment; alleen mock.
 
 ## Stack
 
@@ -121,8 +136,8 @@ npm run tauri:build
 ```
 
 Producten landen in `src-tauri/target/release/bundle/`:
-- `msi/RouteConnect Logistiek_0.1.0_x64_en-US.msi`
-- `nsis/RouteConnect Logistiek_0.1.0_x64-setup.exe`
+- `msi/Logistiek Allsetra_0.1.0_x64_en-US.msi`
+- `nsis/Logistiek Allsetra_0.1.0_x64-setup.exe`
 
 **macOS / Linux**: hetzelfde commando, maar produceert .dmg / .deb / .AppImage.
 Let op: `tauri:build` bouwt alleen voor het **huidige platform**. Voor een
@@ -133,19 +148,38 @@ WSL/Linux.
 
 ```
 src/                          Frontend (React + TS)
-├── types/order.ts            Domein types
-├── data/mockData.ts          Mock orders (ENIGE plek voor sample data)
+├── types/
+│   ├── order.ts              Order, Unit, OrderpickItem, OrderStatus
+│   ├── product.ts            Product, ProductCategory
+│   └── inventory.ts          InventoryItem, InventoryMovement, PurchaseOrder
+├── data/
+│   ├── mockData.ts           Mock orders (ENIGE plek voor order sample data)
+│   └── mockInventory.ts      Mock voorraad + open inkooporders
 ├── lib/
-│   ├── imei.ts               Pure functies: validateImei(), detectDeviceType()
+│   ├── productStrategy.ts    Productregistratie + IMEI-prefix index
+│   ├── imei.ts               Pure functies: validateImei(), detectProductFromImei()
 │   └── format.ts             Datum/tijd formatter (nl-NL)
 ├── services/
-│   ├── orderService.ts       OrderService interface (contract)
-│   ├── mockOrderService.ts   Mock implementatie
-│   └── index.ts              Service injection point
-├── hooks/useOrders.ts        React Query hooks
-├── components/               Sidebar, OrderWorkspace, UnitsTable, …
-├── App.tsx
-└── main.tsx
+│   ├── orderService.ts       OrderService interface (incl. createOrder)
+│   ├── mockOrderService.ts   Mock implementatie (LCO-numbering)
+│   ├── zohoOrderService.ts   Tauri-invoke shim (live mode)
+│   ├── inventoryService.ts   InventoryService interface (incl. listProducts)
+│   ├── mockInventoryService.ts
+│   ├── zohoCatalogService.ts Live productlijst uit Zoho Products module
+│   └── index.ts              Façade — kiest mock of live per service
+├── hooks/
+│   ├── useOrders.ts          Orders + composeert deductForShipment in useShipOrder
+│   ├── useInventory.ts       Voorraad-hooks; exporteert query-keys
+│   └── useAppUpdate.ts       Auto-update prompt
+├── components/
+│   ├── TopNav.tsx            Generieke tab-balk
+│   ├── ProductPicker.tsx     Searchable combobox over de catalogus
+│   ├── UpdatePrompt.tsx
+│   ├── orders/               OrdersTab + Sidebar, OrderWorkspace,
+│   │                         NewOrderForm, …
+│   └── inventory/            InventoryTab + tabel/detail/forms/audit
+├── App.tsx                   Tab-switch
+└── main.tsx                  Single QueryClient
 
 src-tauri/                    Desktop shell (Rust)
 ├── Cargo.toml
@@ -153,7 +187,8 @@ src-tauri/                    Desktop shell (Rust)
 ├── build.rs
 ├── src/
 │   ├── main.rs               Entry point
-│   └── lib.rs                Tauri builder (plugins, setup)
+│   ├── lib.rs                Tauri builder (plugins, setup)
+│   └── zoho/                 Zoho client (alleen orders; voorraad is mock-only)
 ├── capabilities/default.json Permission ACL
 └── icons/                    App icons (generated door tauri init)
 
@@ -163,34 +198,91 @@ scripts/
 
 ## Business rules (samenvatting)
 
+- Orders hebben een `source`: `'zoho'` (uit CRM) of `'logistics'` (zelf
+  gemaakt). De flow is identiek; het verschil zit in herkomst en
+  ordernummer-prefix (`RCO-…` vs `LCO-…`).
 - Logistiek ziet alleen orders met status `Nieuw` of `In behandeling`.
-- IMEI's zijn 15 cijfers, alleen cijfers, prefix bepaalt het device type:
-  - `861…` of `8637…` → Eco5
-  - `8635…` → HCV5-Lite
-  - `864…` → Smart5
-- Het gedetecteerde type moet matchen met het verwachte type van de unit.
+- IMEI's zijn 15 cijfers, alleen cijfers, prefix bepaalt het product (via
+  `lib/productStrategy.ts`, longest-prefix wins):
+  - `861…` of `8637…` → RouteConnect Eco5
+  - `8635…` → RouteConnect HCV5-Lite
+  - `864…` → RouteConnect Smart5
+- Het gedetecteerde product moet matchen met het verwachte product van de unit.
 - IMEI's mogen niet dubbel voorkomen binnen dezelfde order.
-- "Versturen" werkt pas als **alle** units een geldige IMEI hebben.
-- Een open order schuift automatisch naar `In behandeling` zodra er wordt
-  ingevuld; naar `Verstuurd` na een succesvolle versturen-actie (daarna
-  verdwijnt hij uit de lijst).
+- Producten zonder IMEI (accessoires, fietsbeveiliging, sensors) staan wel
+  in `orderpick` maar hebben geen Units — er is geen IMEI-invoer voor.
+- "Versturen" werkt pas als **alle** units een geldige IMEI hebben (of meteen
+  voor orders zonder IMEI-producten).
+- Een open order schuift automatisch naar `In behandeling` zodra er een IMEI
+  wordt ingevuld; naar `Verstuurd` na een succesvolle versturen-actie
+  (daarna verdwijnt hij uit de lijst).
+- Bij versturen schrijft de app de aantallen uit `orderpick` af van
+  `opVoorraad`. Negatieve voorraad geeft een waarschuwingstoast maar
+  blokkeert het versturen niet.
 
 Volledige regels staan in [`CLAUDE.md`](./CLAUDE.md).
 
+## Productregistratie
+
+Eén bestand bepaalt welke producten de app kent:
+[`src/lib/productStrategy.ts`](./src/lib/productStrategy.ts).
+
+Per product: `id`, `sku`, `name`, `category`, `hasIMEI`, `supplier`. Voor
+producten met IMEI ook een lijst prefixes voor automatische detectie.
+
+**Nieuw product toevoegen**: voeg een entry toe aan `DEFINITIONS`. UI
+componenten resolven namen via `getProduct(id)` / `getProductName(id)`, dus
+verder hoeft er niets aangepast.
+
+**Nieuwe IMEI-tracker familie**: zelfde — definieer het product met
+`hasIMEI: true` en de prefixes. De validator herkent het direct.
+
 ## Mock data
 
-Alle sample orders staan in [`src/data/mockData.ts`](./src/data/mockData.ts).
+Twee bestanden, één per domein:
 
-**Nieuwe order toevoegen**: voeg een entry toe aan de `MOCK_ORDERS` array.
-Belangrijk:
+- [`src/data/mockData.ts`](./src/data/mockData.ts) — sample klantorders
+- [`src/data/mockInventory.ts`](./src/data/mockInventory.ts) — voorraad +
+  open inkooporders
 
-- `units` array moet matchen met de device-aantallen uit `orderpick`
-  (accessoires zoals "ID Reader" en "Buzzer" tellen niet — die hebben geen
-  IMEI).
-- `units[i].type` moet het verwachte device type zijn.
+Beide refereren producten alleen via hun `id` uit `productStrategy.ts`.
+
+**Nieuwe order toevoegen** (`mockData.ts`):
+
+- `orderpick[i].productId` moet bestaan in de productregistratie.
+- `units` is alleen aanwezig voor IMEI-producten; aantal moet matchen met
+  `orderpick.quantity` voor dat product.
+- `units[i].productId` is het verwachte product van die unit.
 - `status` is `'Nieuw'` voor nieuwe orders, `'In behandeling'` voor deels
   ingevulde orders.
 - `createdAt` als ISO string — oudste orders staan bovenaan in de sidebar.
+
+**Nieuwe voorraad-rij** (`mockInventory.ts`): één entry per `productId` met
+`opVoorraad`, `opBestelling`, `lastMovementAt`. Open `MOCK_PURCHASE_ORDERS`
+voor een seed inkooporder.
+
+## Logistiek-orders zelf maken
+
+Linker zijde van de Orders-tab heeft een **+ Nieuwe order** knop. Form-velden:
+
+- **Ontvanger** (verplicht) — vrije tekst: persoon, team of bedrijf.
+- **Verzendadres** (verplicht) — straat + huisnummer, postcode, stad.
+- **Producten** — minstens één regel via de productpicker (typen filtert op
+  naam of SKU; pijltjes navigeren, Enter selecteert). Per regel: aantal en
+  optionele regel-notitie.
+- **Interne notitie** (optioneel) — wordt aan de order gehangen als
+  `OrderNote` met auteur "Logistiek".
+
+Resultaat: een order met `source: 'logistics'`, ordernummer `LCO-NNNN`,
+status `Nieuw`. Voor IMEI-producten worden Units automatisch aangemaakt op
+basis van het aantal; voor non-IMEI producten alleen orderpick. Daarna
+opent meteen de standaard order-workspace om IMEI's te scannen of direct
+te versturen.
+
+> **Zoho-push:** logistiek-orders worden vandaag **niet** naar Zoho
+> gestuurd — de live-mode `createOrder` faalt expliciet met een NL-melding.
+> Dat is een business-keuze die nog gemaakt moet worden voordat live mode
+> aan kan.
 
 ## Zoho integratie
 
@@ -332,8 +424,12 @@ GitHub Secrets) gesigneerd zijn.
 
 ## Bekende beperkingen
 
-- Mock service draait in-memory — een reload reset alle progressie. Opzettelijk
+- Mock services (orders + voorraad) draaien in-memory — een reload reset
+  alle voorraadmutaties, ontvangen inkooporders en orderstatus. Opzettelijk
   voor het prototype; de echte backend zal persistent zijn.
+- Voorraad heeft nog géén Zoho-tegenhanger — de façade pakt altijd de mock
+  inventory service. De order-kant switcht wel automatisch naar Zoho als de
+  binary met secrets is gebouwd.
 - Geen authenticatie in de app zelf — aangenomen wordt dat de workstation
   vertrouwd is.
 - Alleen desktop layout (geen mobile breakpoints).

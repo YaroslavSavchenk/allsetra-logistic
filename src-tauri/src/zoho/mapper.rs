@@ -22,6 +22,8 @@ pub fn json_to_order(raw: &Value, notes: Vec<OrderNote>) -> Order {
         status: extract_str(raw, config::FIELD_STATUS).unwrap_or_default(),
         created_at: extract_str(raw, config::FIELD_CREATED_AT).unwrap_or_default(),
         quote_owner: extract_lookup_name(raw, config::FIELD_OWNER).unwrap_or_default(),
+        // Orders pulled from Zoho are always sales-originated.
+        source: "zoho".to_string(),
         notes,
         orderpick: extract_array(raw, config::FIELD_ORDERPICK)
             .iter()
@@ -31,6 +33,27 @@ pub fn json_to_order(raw: &Value, notes: Vec<OrderNote>) -> Order {
             .iter()
             .map(json_to_unit)
             .collect(),
+    }
+}
+
+pub fn json_to_product(raw: &Value) -> Product {
+    // Category may be a picklist string or absent — fall back to the catch-all
+    // `tracker-accessory` so the UI renders something. The frontend can
+    // re-categorise based on SKU.
+    let category = extract_str(raw, config::PRODUCT_FIELD_CATEGORY)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "tracker-accessory".to_string());
+
+    Product {
+        id: extract_str(raw, "id").unwrap_or_default(),
+        sku: extract_str(raw, config::PRODUCT_FIELD_CODE).unwrap_or_default(),
+        name: extract_str(raw, config::PRODUCT_FIELD_NAME).unwrap_or_default(),
+        category,
+        // Set on the JS side via the SKU-keyed IMEI strategy.
+        has_imei: false,
+        supplier: extract_lookup_name(raw, config::PRODUCT_FIELD_VENDOR)
+            .or_else(|| extract_str(raw, config::PRODUCT_FIELD_VENDOR))
+            .unwrap_or_default(),
     }
 }
 
@@ -45,15 +68,20 @@ pub fn json_to_note(raw: &Value) -> OrderNote {
 }
 
 fn json_to_unit(raw: &Value) -> Unit {
+    // TODO: when Zoho integration goes live, resolve the unit type field
+    // (today a free-text device-type string) to our internal product id via
+    // a lookup keyed on Zoho's Products module.
     Unit {
         id: extract_str(raw, "id").unwrap_or_default(),
         imei: extract_str(raw, config::UNIT_FIELD_IMEI).unwrap_or_default(),
-        type_: extract_str(raw, config::UNIT_FIELD_TYPE).unwrap_or_default(),
+        product_id: extract_str(raw, config::UNIT_FIELD_TYPE).unwrap_or_default(),
     }
 }
 
 fn json_to_orderpick(raw: &Value) -> OrderpickItem {
-    let product = extract_lookup_name(raw, config::ORDERPICK_FIELD_PRODUCT)
+    // TODO: resolve Zoho's product reference to our internal product id
+    // (currently we pass through the lookup name which is not stable).
+    let product_id = extract_lookup_name(raw, config::ORDERPICK_FIELD_PRODUCT)
         .or_else(|| extract_str(raw, config::ORDERPICK_FIELD_PRODUCT))
         .unwrap_or_default();
     let quantity = raw
@@ -62,7 +90,7 @@ fn json_to_orderpick(raw: &Value) -> OrderpickItem {
         .unwrap_or(0) as u32;
     let note = extract_str(raw, config::ORDERPICK_FIELD_NOTE).unwrap_or_default();
     OrderpickItem {
-        product,
+        product_id,
         quantity,
         note,
     }

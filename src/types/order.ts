@@ -4,10 +4,17 @@ export type OrderStatus =
   | 'In behandeling'
   | 'Verstuurd';
 
-export type DeviceType = 'Eco5' | 'HCV5-Lite' | 'Smart5';
+/**
+ * Where the order originated. `'zoho'` means a sales-created order pulled
+ * from CRM (the default and historic case). `'logistics'` means logistics
+ * created the order locally — for ad-hoc shipments without a sales quote.
+ * The Zoho-push behaviour for logistics-originated orders is TBD; for now
+ * they live only in the local store.
+ */
+export type OrderSource = 'zoho' | 'logistics';
 
 export interface OrderpickItem {
-  product: string;
+  productId: string;
   quantity: number;
   note: string;
 }
@@ -15,7 +22,7 @@ export interface OrderpickItem {
 export interface Unit {
   id: string;
   imei: string;
-  type: DeviceType;
+  productId: string;
 }
 
 /**
@@ -34,6 +41,11 @@ export interface OrderNote {
 export interface Order {
   id: string;
   orderNumber: string;
+  /**
+   * For Zoho-sourced orders this is the linked CRM Account name. For
+   * logistics-created orders it's a free-text recipient label (person,
+   * department, external company without a CRM record).
+   */
   account: string;
   address: string;
   postcode: string;
@@ -41,6 +53,7 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
   quoteOwner: string;
+  source: OrderSource;
   notes: OrderNote[];
   orderpick: OrderpickItem[];
   units: Unit[];

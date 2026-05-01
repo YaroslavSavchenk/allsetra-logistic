@@ -1,7 +1,7 @@
 [package]
 name = "routeconnect-logistiek"
 version = "0.1.0"
-description = "RouteConnect Logistiek — interne tool voor Allsetra"
+description = "Logistiek Allsetra — interne werkomgeving voor het Allsetra logistiek team"
 authors = ["Allsetra"]
 edition = "2021"
 rust-version = "1.77.2"
