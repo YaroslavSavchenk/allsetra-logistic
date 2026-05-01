@@ -7,10 +7,15 @@
   body,
   #root {
     height: 100%;
+    /* Prevent any wide child from horizontally scrolling the entire window
+       (e.g. a long single-line product name in the inventory table) — the
+       individual scroll containers inside the app handle their own overflow. */
+    overflow: hidden;
   }
 
   body {
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    overscroll-behavior: none;
   }
 
   *:focus-visible {

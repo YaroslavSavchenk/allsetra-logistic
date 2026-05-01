@@ -1,5 +1,7 @@
-import { Truck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { FlaskConical, Truck } from 'lucide-react';
 import type { ComponentType } from 'react';
+import { getServiceMode, type ServiceMode } from '@/services';
 
 export interface TabDefinition<Id extends string = string> {
   id: Id;
@@ -18,6 +20,8 @@ export function TopNav<Id extends string>({
   activeTab,
   onTabChange,
 }: Props<Id>) {
+  const mode = useServiceMode();
+
   return (
     <header className="flex h-14 flex-shrink-0 items-center gap-6 border-b border-surface-700 bg-surface-900 px-5">
       <div className="flex items-center gap-2">
@@ -63,6 +67,30 @@ export function TopNav<Id extends string>({
           );
         })}
       </nav>
+
+      {mode === 'mock' && (
+        <span
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-300"
+          title="De app draait op lokale demo data — geen verbinding met Zoho. Wijzigingen verdwijnen na een reload."
+        >
+          <FlaskConical className="h-3 w-3" />
+          Mock data
+        </span>
+      )}
     </header>
   );
+}
+
+function useServiceMode(): ServiceMode | null {
+  const [mode, setMode] = useState<ServiceMode | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getServiceMode().then((m) => {
+      if (!cancelled) setMode(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return mode;
 }

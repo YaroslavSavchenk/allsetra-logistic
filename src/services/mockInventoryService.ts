@@ -61,7 +61,23 @@ export class MockInventoryService implements InventoryService {
   }
 
   async listProducts(): Promise<Product[]> {
-    return delay(clone(registryListProducts()));
+    // Voorraad is the single source of truth for "what can we ship": every
+    // product the picker should offer is one that has a stock row here.
+    // Add a row to mockInventory.ts to surface a new product in the
+    // new-order picker. Falls back to the full registry when the inventory
+    // is empty so the picker is still useful in a fresh seed.
+    if (this.inventory.length === 0) {
+      return delay(clone(registryListProducts()));
+    }
+    const seen = new Set<string>();
+    const products: Product[] = [];
+    for (const item of this.inventory) {
+      if (seen.has(item.productId)) continue;
+      seen.add(item.productId);
+      const product = registryGetProduct(item.productId);
+      if (product) products.push(product);
+    }
+    return delay(clone(products));
   }
 
   async registerPurchaseOrder(
@@ -94,31 +110,47 @@ export class MockInventoryService implements InventoryService {
     return delay(clone(po));
   }
 
-  async receivePurchaseOrder(poId: string): Promise<PurchaseOrder> {
+  async receivePurchaseOrder(
+    poId: string,
+    productId: string,
+  ): Promise<PurchaseOrder> {
     const po = this.purchaseOrders.find((p) => p.id === poId);
     if (!po) throw new Error(`Inkooporder ${poId} niet gevonden`);
     if (po.status === 'received') {
       throw new Error('Inkooporder is al ontvangen');
     }
 
+    const line = po.items.find((i) => i.productId === productId);
+    if (!line) {
+      throw new Error(
+        `Product ${productId} staat niet op inkooporder ${poId}`,
+      );
+    }
+    if (line.receivedAt) {
+      throw new Error('Deze regel is al ontvangen');
+    }
+
     const ts = nowIso();
-    po.status = 'received';
-    po.receivedAt = ts;
+    line.receivedAt = ts;
 
-    for (const item of po.items) {
-      const inv = this.findOrCreate(item.productId);
-      inv.opBestelling = Math.max(0, inv.opBestelling - item.qty);
-      inv.opVoorraad += item.qty;
-      inv.lastMovementAt = ts;
+    const inv = this.findOrCreate(line.productId);
+    inv.opBestelling = Math.max(0, inv.opBestelling - line.qty);
+    inv.opVoorraad += line.qty;
+    inv.lastMovementAt = ts;
 
-      this.movements.push({
-        id: crypto.randomUUID(),
-        productId: item.productId,
-        delta: item.qty,
-        reason: po.note || 'Inkooporder ontvangen',
-        createdAt: ts,
-        kind: 'purchase-received',
-      });
+    this.movements.push({
+      id: crypto.randomUUID(),
+      productId: line.productId,
+      delta: line.qty,
+      reason: po.note || 'Inkooporder ontvangen',
+      createdAt: ts,
+      kind: 'purchase-received',
+    });
+
+    // PO flips to received once every line is in.
+    if (po.items.every((l) => l.receivedAt)) {
+      po.status = 'received';
+      po.receivedAt = ts;
     }
 
     return delay(clone(po));

@@ -31,17 +31,28 @@ export function InventoryTable({
   }, [inventory]);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return rows;
     const q = query.trim().toLowerCase();
-    return rows.filter(
-      (row) =>
-        row.product!.name.toLowerCase().includes(q) ||
-        row.product!.sku.toLowerCase().includes(q),
-    );
+    const matched = q
+      ? rows.filter(
+          (row) =>
+            row.product!.name.toLowerCase().includes(q) ||
+            row.product!.sku.toLowerCase().includes(q),
+        )
+      : rows;
+
+    // Sort: products with an active inkooporder bubble to the top; within
+    // each group the lowest stock floats up so logistics sees the urgent
+    // items first.
+    return [...matched].sort((a, b) => {
+      const aPending = a.item.opBestelling > 0 ? 1 : 0;
+      const bPending = b.item.opBestelling > 0 ? 1 : 0;
+      if (aPending !== bPending) return bPending - aPending;
+      return a.item.opVoorraad - b.item.opVoorraad;
+    });
   }, [rows, query]);
 
   return (
-    <aside className="flex w-96 flex-shrink-0 flex-col border-r border-surface-700 bg-surface-900">
+    <aside className="flex w-[420px] flex-shrink-0 flex-col border-r border-surface-700 bg-surface-900">
       <div className="flex items-center gap-2 border-b border-surface-700 px-5 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
           <Package className="h-4 w-4" />
@@ -153,14 +164,12 @@ function ProductRow({
           />
         )}
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-semibold text-slate-100">
+          <span className="break-words text-sm font-semibold leading-tight text-slate-100">
             {name}
           </span>
-          <span className="truncate font-mono text-xs text-slate-500">
-            {sku}
-          </span>
+          <span className="font-mono text-xs text-slate-500">{sku}</span>
           {lastMovementAt && (
-            <span className="mt-0.5 truncate text-[10px] text-slate-500">
+            <span className="mt-0.5 text-[10px] text-slate-500">
               {formatDateTime(lastMovementAt)}
             </span>
           )}

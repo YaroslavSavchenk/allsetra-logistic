@@ -82,7 +82,13 @@ export function useRegisterPurchaseOrder() {
 export function useReceivePurchaseOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (poId: string) => inventoryService.receivePurchaseOrder(poId),
+    mutationFn: ({
+      poId,
+      productId,
+    }: {
+      poId: string;
+      productId: string;
+    }) => inventoryService.receivePurchaseOrder(poId, productId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: INVENTORY_KEY });
       qc.invalidateQueries({ queryKey: PURCHASE_ORDERS_KEY });

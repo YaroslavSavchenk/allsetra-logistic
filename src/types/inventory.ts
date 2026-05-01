@@ -47,6 +47,13 @@ export type PurchaseOrderStatus = 'open' | 'received';
 export interface PurchaseOrderLine {
   productId: string;
   qty: number;
+  /**
+   * Set when this specific line is received. A multi-product PO may arrive
+   * piecemeal; the user clicks "Ontvangen" per product line and stock for
+   * only that product moves. The parent PO becomes `'received'` once every
+   * line is received.
+   */
+  receivedAt?: string;
 }
 
 export interface PurchaseOrder {
@@ -54,6 +61,7 @@ export interface PurchaseOrder {
   createdAt: string;
   note: string;
   status: PurchaseOrderStatus;
+  /** Set when every line is received. */
   receivedAt?: string;
   items: PurchaseOrderLine[];
 }

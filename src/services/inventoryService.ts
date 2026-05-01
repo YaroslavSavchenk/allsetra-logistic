@@ -28,7 +28,13 @@ export interface InventoryService {
     note?: string,
   ): Promise<PurchaseOrder>;
 
-  receivePurchaseOrder(poId: string): Promise<PurchaseOrder>;
+  /**
+   * Receive a single product line on an open PO. Multi-product POs often
+   * arrive in chunks; this lets the user mark each line individually so
+   * stock for unrelated products on the same PO doesn't move yet. The PO
+   * itself flips to `'received'` only when every line is received.
+   */
+  receivePurchaseOrder(poId: string, productId: string): Promise<PurchaseOrder>;
   listPurchaseOrders(): Promise<PurchaseOrder[]>;
 
   adjustStock(

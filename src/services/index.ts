@@ -7,22 +7,42 @@ import type { InventoryService } from './inventoryService';
 import type { Product } from '@/types/product';
 
 /**
+ * **Force-mock for v0.2.x.** The Zoho live path is wired but two pieces are
+ * unfinished: (a) `createOrder` for logistics-originated orders rejects in
+ * live mode pending a business decision on Zoho-push, and (b) the Products
+ * module field mapping hasn't been verified against the real schema yet.
+ * Until both are resolved we run entirely on local mock data so demos and
+ * QA stay usable. To re-enable Zoho live mode, flip this to `false`.
+ */
+const FORCE_MOCK = true;
+
+/** Reflects which back-end the façade landed on after the probe settles.
+ *  Components can read this to surface a "mock data" badge in the UI. */
+export type ServiceMode = 'mock' | 'zoho';
+let resolvedMode: ServiceMode = 'mock';
+
+/**
  * A façade that starts on the mock service and swaps to Zoho as soon as the
  * Rust side confirms it has baked-in credentials. The probe is fired once
- * at load time; until it resolves, the mock is used — which keeps the app
- * responsive in browser dev (`npm run dev`) and in Tauri builds without
- * Zoho secrets. After the probe resolves, all calls go to whichever service
- * is active.
+ * at load time; until it resolves, the mock is used.
  */
 let active: OrderService = mockOrderService;
 
-const resolved: Promise<void> = zohoIsConfigured()
+const resolved: Promise<void> = (FORCE_MOCK
+  ? Promise.resolve(false)
+  : zohoIsConfigured()
+)
   .then((configured) => {
     if (configured) {
       active = zohoOrderService;
+      resolvedMode = 'zoho';
       console.info('[services] Zoho configured — using live service');
     } else {
-      console.info('[services] Zoho not configured — using mock service');
+      console.info(
+        FORCE_MOCK
+          ? '[services] FORCE_MOCK — using mock service'
+          : '[services] Zoho not configured — using mock service',
+      );
     }
   })
   // Defensive: any unexpected probe failure must not deadlock every
@@ -30,6 +50,12 @@ const resolved: Promise<void> = zohoIsConfigured()
   .catch((err) => {
     console.warn('[services] Zoho probe failed, staying on mock', err);
   });
+
+/** Resolves to the active mode after the probe settles. */
+export async function getServiceMode(): Promise<ServiceMode> {
+  await resolved;
+  return resolvedMode;
+}
 
 export const orderService: OrderService = {
   async getOpenOrders() {
@@ -70,13 +96,20 @@ const activeInventory: InventoryService = mockInventoryService;
 let activeListProducts: () => Promise<Product[]> = () =>
   activeInventory.listProducts();
 
-const catalogResolved: Promise<void> = zohoIsConfigured()
+const catalogResolved: Promise<void> = (FORCE_MOCK
+  ? Promise.resolve(false)
+  : zohoIsConfigured()
+)
   .then((configured) => {
     if (configured) {
       activeListProducts = () => zohoCatalogService.listProducts();
       console.info('[services] Zoho configured — using live product catalogue');
     } else {
-      console.info('[services] Zoho not configured — using mock product catalogue');
+      console.info(
+        FORCE_MOCK
+          ? '[services] FORCE_MOCK — picker reads from voorraad'
+          : '[services] Zoho not configured — picker reads from voorraad',
+      );
     }
   })
   .catch((err) => {
@@ -100,8 +133,8 @@ export const inventoryService: InventoryService = {
   async registerPurchaseOrder(items, note) {
     return activeInventory.registerPurchaseOrder(items, note);
   },
-  async receivePurchaseOrder(poId) {
-    return activeInventory.receivePurchaseOrder(poId);
+  async receivePurchaseOrder(poId, productId) {
+    return activeInventory.receivePurchaseOrder(poId, productId);
   },
   async listPurchaseOrders() {
     return activeInventory.listPurchaseOrders();
